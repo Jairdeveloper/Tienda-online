@@ -1,0 +1,89 @@
+---
+id: registro_ids
+area: system
+type: REGISTRY
+module: system
+version: 1.0
+status: ACTIVE
+tags:
+  - registry
+  - ids
+  - documentation
+summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es único e inmutable. Sirve como autoridad para evitar colisiones y resolver referencias cruzadas."
+---
+
+# Registro de IDs — @tienda/api
+
+## ARCH (Architecture)
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 001 | `001_ARCH_SYSTEM_OVERVIEW_1_0_DRAFT.md` | architecture | ARCH | DRAFT | 2026-05-23 |
+
+## DB (Database)
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 002 | `002_DB_PRISMA_SCHEMA_1_0_DRAFT.md` | database | DB | DRAFT | 2026-05-23 |
+
+## API
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 003 | `003_API_AUTH_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+| 004 | `004_API_CATALOG_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+| 005 | `005_API_CART_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+| 006 | `006_API_CHECKOUT_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+| 007 | `007_API_ORDERS_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+| 008 | `008_API_PAYMENTS_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+| 009 | `009_API_USERS_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+| 010 | `010_API_INVENTORY_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+| 011 | `011_API_ADMIN_1_0_DRAFT.md` | api | API | DRAFT | 2026-05-23 |
+
+## FLOWS
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 012 | `012_FLOW_AUTH_1_0_DRAFT.md` | flows | FLOW | DRAFT | 2026-05-23 |
+| 013 | `013_FLOW_CHECKOUT_1_0_DRAFT.md` | flows | FLOW | DRAFT | 2026-05-23 |
+| 014 | `014_FLOW_PAYMENT_1_0_DRAFT.md` | flows | FLOW | DRAFT | 2026-05-23 |
+
+## ADR (Decisions)
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 015 | `015_ADR_DATABASE_POSTGRESQL_1_0_DRAFT.md` | decisions | ADR | DRAFT | 2026-05-23 |
+| 016 | `016_ADR_AUTH_JWT_RBAC_1_0_DRAFT.md` | decisions | ADR | DRAFT | 2026-05-23 |
+| 017 | `017_ADR_PAYMENTS_PROVIDER_PATTERN_1_0_DRAFT.md` | decisions | ADR | DRAFT | 2026-05-23 |
+
+## PRM (Prompts)
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 018 | `018_PRM_BUILD_AGENT_1_0_DRAFT.md` | prompts | PRM | DRAFT | 2026-05-23 |
+
+## AI (Knowledge Base)
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 019 | `019_AI_KNOWLEDGE_BASE_1_0_DRAFT.md` | ai | AI | DRAFT | 2026-05-23 |
+
+---
+
+## IDs de Algoritmos (algoritmos/)
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| — | `produccion-plan.md` | algorithms | ALG | DRAFT | 2026-05-30 |
+| — | `produccion-algoritmo.md` | algorithms | ALG | DRAFT | 2026-05-30 |
+| — | `propuesta-convencion-documentacion.md` | algorithms | PROPUESTA | DRAFT | 2026-05-30 |
+| — | `flujo-programacion-agentes.md` | algorithms | ALGP | DRAFT | 2026-05-30 |
+
+---
+
+## Reglas
+
+1. Cada ID se asigna una vez y **nunca se reasigna**, incluso si el documento se elimina.
+2. Para crear un nuevo documento, buscar el próximo ID disponible en su área.
+3. Los IDs de algoritmos no siguen secuencia numérica (están fuera del sistema docs/).
+4. Actualizar este registro cada vez que se cree, deprecate o archive un documento.

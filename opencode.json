@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode/big-pickle",
+  "prompts": [
+    "{file:./prompts/build.txt}",
+    "{file:./AGENTS.md}",
+    "{file:./algoritmos/propuesta-convencion-documentacion.md}",
+    "{file:./algoritmos/flujo-programacion-agentes.md}"
+  ]
+}

@@ -1,0 +1,651 @@
+{
+  "info": {
+    "name": "Tienda Online API",
+    "description": "Colección oficial de la API de Tienda Online.\n\n## Autenticación\n1. Ejecuta `POST auth/login` o `POST auth/register`\n2. La colección auto-guarda el token JWT en la variable `token`\n3. Los endpoints protegidos usan `{{token}}` automáticamente",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "tienda-api"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" },
+    { "key": "variantId", "value": "", "type": "string" },
+    { "key": "orderId", "value": "", "type": "string" },
+    { "key": "webhookSecret", "value": "dev-webhook-secret-change-in-production", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is ok', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().status).to.eql('ok');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Register successful or already exists', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "  if (pm.response.code === 201) {",
+                  "    pm.expect(json.tokens.accessToken).to.be.a('string');",
+                  "  }",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('token', json.tokens.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "POST Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Login successful', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(json.tokens.accessToken).to.be.a('string');",
+                  "});",
+                  "pm.collectionVariables.set('token', json.tokens.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "POST Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{token}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+          }
+        },
+        {
+          "name": "POST Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"some-refresh-token\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        },
+        {
+          "name": "GET Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        {
+          "name": "GET Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/categories", "host": ["{{baseUrl}}"], "path": ["catalog", "categories"] }
+          }
+        },
+        {
+          "name": "GET Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/catalog/products?page=1&limit=20&sort=name&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["catalog", "products"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "sort", "value": "name" },
+                { "key": "order", "value": "asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Product By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('productId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["catalog", "products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "GET Product Variants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/products/{{productId}}/variants", "host": ["{{baseUrl}}"], "path": ["catalog", "products", "{{productId}}", "variants"] }
+          }
+        },
+        {
+          "name": "GET Variant Inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/inventory/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["catalog", "inventory", "{{variantId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "GET Cart",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          }
+        },
+        {
+          "name": "POST Add Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variantId\": \"{{variantId}}\",\n  \"qty\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart", "items"] }
+          }
+        },
+        {
+          "name": "PATCH Update Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"qty\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/cart/items/item-id", "host": ["{{baseUrl}}"], "path": ["cart", "items", "item-id"] }
+          }
+        },
+        {
+          "name": "DELETE Remove Item",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/items/item-id", "host": ["{{baseUrl}}"], "path": ["cart", "items", "item-id"] }
+          }
+        },
+        {
+          "name": "POST Clear Cart",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/clear", "host": ["{{baseUrl}}"], "path": ["cart", "clear"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "POST Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"addressId\": \"address-uuid\",\n  \"shippingMethod\": \"standard\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/checkout", "host": ["{{baseUrl}}"], "path": ["checkout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "GET My Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "GET Order By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderId}}"] }
+          }
+        },
+        {
+          "name": "POST Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderId}}/cancel", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderId}}", "cancel"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "POST Create Intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"mock\",\n  \"returnUrl\": \"https://tienda.example.com/orders/{{orderId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/payments/{{orderId}}/intent", "host": ["{{baseUrl}}"], "path": ["payments", "{{orderId}}", "intent"] }
+          }
+        },
+        {
+          "name": "POST Confirm Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerPaymentId\": \"ext_123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/payments/{{orderId}}/confirm", "host": ["{{baseUrl}}"], "path": ["payments", "{{orderId}}", "confirm"] }
+          }
+        },
+        {
+          "name": "POST Webhook Mock",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const body = JSON.stringify(request.data);",
+                  "const crypto = require('crypto-js');",
+                  "const sig = crypto.HmacSHA256(body, pm.collectionVariables.get('webhookSecret')).toString();",
+                  "pm.request.headers.add({ key: 'x-webhook-signature', value: sig });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.completed\",\n  \"paymentId\": \"payment-uuid\",\n  \"providerPaymentId\": \"ext_123\",\n  \"status\": \"paid\",\n  \"amount\": 100.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/payments/webhooks/mock", "host": ["{{baseUrl}}"], "path": ["payments", "webhooks", "mock"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "GET My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "PATCH Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"+521234567890\"\n}" },
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "GET Addresses",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/me/addresses", "host": ["{{baseUrl}}"], "path": ["users", "me", "addresses"] }
+          }
+        },
+        {
+          "name": "POST Create Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"street\": \"Av. Reforma 123\",\n  \"extNumber\": \"A\",\n  \"neighborhood\": \"Juárez\",\n  \"city\": \"Ciudad de México\",\n  \"state\": \"CDMX\",\n  \"zip\": \"06600\",\n  \"country\": \"MX\",\n  \"isDefault\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/me/addresses", "host": ["{{baseUrl}}"], "path": ["users", "me", "addresses"] }
+          }
+        },
+        {
+          "name": "PATCH Update Address",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"isDefault\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/users/me/addresses/address-id", "host": ["{{baseUrl}}"], "path": ["users", "me", "addresses", "address-id"] }
+          }
+        },
+        {
+          "name": "DELETE Address",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/me/addresses/address-id", "host": ["{{baseUrl}}"], "path": ["users", "me", "addresses", "address-id"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "item": [
+        {
+          "name": "GET Variant Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/inventory/variants/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["inventory", "variants", "{{variantId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Orders",
+          "item": [
+            {
+              "name": "GET List Orders",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/orders?page=1&limit=20&status=pending",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "orders"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "status", "value": "pending" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET Order Detail",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}"] }
+              }
+            },
+            {
+              "name": "PATCH Update Order Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"status\": \"confirmed\",\n  \"note\": \"Aprobado por administrador\"\n}" },
+                "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}", "status"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Products",
+          "item": [
+            {
+              "name": "GET List Products",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/products?page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "products"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET Product Detail",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": { "raw": "{{baseUrl}}/admin/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["admin", "products", "{{productId}}"] }
+              }
+            },
+            {
+              "name": "POST Create Product",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.id) pm.collectionVariables.set('productId', json.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nuevo Producto\",\n  \"description\": \"Descripción del producto\",\n  \"categoryIds\": [\"category-uuid\"],\n  \"attributes\": {\n    \"brand\": \"Marca\",\n    \"model\": \"Modelo\"\n  },\n  \"variants\": [\n    {\n      \"sku\": \"NEW-PRO-001\",\n      \"price\": 99.99,\n      \"listPrice\": 129.99,\n      \"attributes\": {\n        \"color\": \"Rojo\"\n      },\n      \"barcode\": \"7501234567890\",\n      \"stock\": 100,\n      \"safetyStock\": 10\n    }\n  ]\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/admin/products", "host": ["{{baseUrl}}"], "path": ["admin", "products"] }
+              }
+            },
+            {
+              "name": "PATCH Update Product",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"name\": \"Producto Actualizado\",\n  \"isActive\": true\n}" },
+                "url": { "raw": "{{baseUrl}}/admin/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["admin", "products", "{{productId}}"] }
+              }
+            },
+            {
+              "name": "DELETE Product",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": { "raw": "{{baseUrl}}/admin/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["admin", "products", "{{productId}}"] }
+              }
+            },
+            {
+              "name": "POST Create Variant",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sku\": \"PROD-001-BLUE\",\n  \"price\": 89.99,\n  \"listPrice\": 109.99,\n  \"attributes\": {\n    \"color\": \"Azul\"\n  },\n  \"barcode\": \"7501234567891\",\n  \"stock\": 50,\n  \"safetyStock\": 5\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/admin/products/{{productId}}/variants", "host": ["{{baseUrl}}"], "path": ["admin", "products", "{{productId}}", "variants"] }
+              }
+            },
+            {
+              "name": "PATCH Update Variant",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"price\": 79.99\n}" },
+                "url": { "raw": "{{baseUrl}}/admin/variants/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["admin", "variants", "{{variantId}}"] }
+              }
+            },
+            {
+              "name": "DELETE Variant",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": { "raw": "{{baseUrl}}/admin/variants/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["admin", "variants", "{{variantId}}"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inventory",
+          "item": [
+            {
+              "name": "GET List Inventory",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/inventory?page=1&limit=20&lowStock=true",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "inventory"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "lowStock", "value": "true" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PATCH Update Inventory",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"quantity\": 200,\n  \"safetyStock\": 20\n}" },
+                "url": { "raw": "{{baseUrl}}/admin/inventory/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["admin", "inventory", "{{variantId}}"] }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

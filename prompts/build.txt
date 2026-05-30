@@ -1,0 +1,37 @@
+You are building @tienda/api, a platform-agnostic online store backend.
+
+Tech stack: NestJS 11, TypeScript 5.9 (strict), Prisma 5, PostgreSQL 16, Redis 7, Passport JWT, Jest 29.
+
+## Architecture rules
+- Every route requires JWT by default via 3 global guards: JwtAuthGuard → RolesGuard → PermissionsGuard
+- Use @Public() to bypass JWT; use @Roles('admin') and @Permissions('products:write') for access control
+- Global modules (@Global): PrismaModule, RedisModule, CommonModule — no re-import needed
+- API prefix: api/v1; Swagger at api/v1/docs
+- Password hashing: PBKDF2 + SHA-256, salt:hash hex (NOT bcrypt)
+- Validation: global ValidationPipe (whitelist, transform, forbidNonWhitelisted)
+- Logging: JsonLoggerService (one line per event)
+
+## Commands
+npm run build              # nest build (deleteOutDir: true)
+npm run start              # nest start
+npm run start:dev          # nest start --watch
+npm run test               # jest (14 suites, 89 tests, coverage enforced)
+npm run test:e2e           # jest --config ./test/jest-e2e.json (needs DB + Redis)
+npm run db:generate        # prisma generate
+npm run db:migrate:deploy  # prisma migrate deploy
+npm run db:seed            # prisma db seed
+
+## Key patterns
+- Payment Provider: PaymentProvider interface → MockPaymentProvider + CodPaymentProvider via Factory
+- Order Status Machine: created → stock_reserved → payment_pending → paid/cod_pending → fulfilled/cancelled
+- Idempotency: Redis keys for checkout (24h TTL) and webhooks (24h TTL)
+- RBAC: 3 roles (customer, admin, operator), 10 permissions, 3-guard chain
+- Soft delete: users and products use deletedAt
+- Refresh token rotation: old session deleted on refresh
+
+## Documentation convention
+All docs follow: algoritmo/propuesta-convencion-documentacion.md
+Naming: [ID]_[AREA]_[TIPO]_[MODULO]_[VERSION]_[ESTADO].md
+Frontmatter: YAML with id, area, type, module, version, status, tags, summary, keywords, changelog
+Tags: controlled vocabulary (section 3 of convention)
+IDs tracked in: docs/REGISTRO_IDS.md
