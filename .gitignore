@@ -5,5 +5,3 @@ coverage/
 *.log
 .DS_Store
 algoritmos/algoritmos.md
-.workflow/
-workflows.sh
