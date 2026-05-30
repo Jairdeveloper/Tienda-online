@@ -5,7 +5,7 @@ model: opencode/big-pickle
 temperature: 0.1
 tools:
   write: false
-  edit: flase
+  edit: false
   bash: false
 ---
 # Current Instruction — @tienda/api Agent
@@ -112,4 +112,7 @@ Archivo en `.opencode/agents/security-reviewer.md` con:
 - `prompts/build.txt` — Prompt de build
 - `docs/MASTER_INDEX.md` — Mapa del sistema
 - `docs/prompts/018_PRM_BUILD_AGENT_1_0_DRAFT.md` — Formato de prompts
-- `opencode.json` — Configuración del modelo (`opencode/big-pickle`)
+- `_opencode.json` — Configuración del modelo (`opencode/big-pickle`)
+- `.opencode/agents/workflow-agent.md` — Agente autónomo para operar workflow.sh
+- `workflow.sh` — Script de flujo de programación con agentes IA
+- `workflow/024_DEV_GUIDE_WORKFLOW_1_0_DRAFT.md` — Guía de uso de workflow.sh

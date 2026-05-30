@@ -6,3 +6,4 @@ coverage/
 .DS_Store
 algoritmos/algoritmos.md
 .workflow/
+workflows.sh

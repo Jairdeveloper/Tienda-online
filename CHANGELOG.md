@@ -11,12 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Knowledge base documentation in `/docs/` with 19 files covering architecture, database schema, API specs, business flows, ADRs, and AI agent prompts
-- `opencode.json` project configuration referencing `opencode/big-pickle` model and `prompts/build.txt`
+- `_opencode.json` project configuration referencing `opencode/big-pickle` model and `prompts/build.txt`
 - `prompts/build.txt` with concise build agent instructions (tech stack, commands, patterns, CI)
 - `workflow.sh` — script de flujo de programación con agentes IA (7 modos: propose, plan, execute, verify, listen, status, clean/full)
 - `workflow/020_DEV_WORKFLOW_1_0_DRAFT.md` — documentación del script workflow.sh
 - `docs/frontend/021_API_FRONTEND_SPEC_1_0_DRAFT.md` — especificación frontend basada en Postman (10 módulos, 30+ endpoints)
 - `docs/frontend/022_EXEC_FRONTEND_PLAN_1_0_DRAFT.md` — plan de ejecución frontend (7 fases, 22 días estimados)
+- `.opencode/agents/workflow-agent.md`: nueva subsección 4.5 "Mejora de agentes subordinados" — capacidad de orquestador para detectar y corregir inconsistencias en agentes de menor jerarquía
+
+### Changed
+- `.opencode/agents/about.md`: referencias `opencode.json` corregidas a `_opencode.json` (líneas 150, 161); lista de agentes actualizada con backend-reviewer, frontend-reviewer, workflow-agent y compaction (desactivado)
+- `.opencode/agents/current-instruction.md`: indentación corregida en lista de referencias (líneas 117-119 ya no aparecen como sub-items de `_opencode.json`)
 
 ### Fixed
 - `workflow.sh`: `grep -n` contaminaba `step_num` con números de línea (bug 1)
@@ -42,6 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `workflow.sh`: `full --auto` ya no llama `await-propuesta`/`await-plan` dos veces (bug: líneas 684-685 y 698-699 duplicaban la espera)
+
+### Changed
+- `.opencode/agents/current-instruction.md`: referencia `opencode.json` corregida a `_opencode.json` (línea 115)
+- `.opencode/agents/current-instruction.md`: añadidas referencias a `workflow-agent.md`, `workflow.sh` y `024_DEV_GUIDE_WORKFLOW_1_0_DRAFT.md` en sección de referencias (líneas 117-119)
 
 ---
 

@@ -139,14 +139,18 @@ GitHub Actions en `.github/workflows/ci.yml`:
 │   └── agents/             # Prompts para subagentes opencode
 │       ├── about.md
 │       ├── current-instruction.md
+│       ├── workflow-agent.md
+│       ├── nestjs-architect.md
 │       ├── prisma-reviewer.md
-│       ├── changelog-writer.md
-│       ├── test-writer.md
 │       ├── security-reviewer.md
-│       └── nestjs-architect.md
+│       ├── backend-reviewer.md
+│       ├── frontend-reviewer.md
+│       ├── test-writer.md
+│       ├── changelog-writer.md
+│       └── compaction.md (desactivado)
 ├── prompts/
 │   └── build.txt           # Prompt principal de build
-├── opencode.json           # Configuración de opencode
+├── _opencode.json          # Configuración de opencode
 ├── AGENTS.md               # Guía principal para agentes
 ├── CHANGELOG.md            # Historial de versiones
 ├── Dockerfile              # Build multi-etapa
@@ -158,4 +162,4 @@ GitHub Actions en `.github/workflows/ci.yml`:
 - `AGENTS.md` — Guía principal de agente en raíz del proyecto
 - `docs/MASTER_INDEX.md` — Mapa del sistema con dependencias entre módulos
 - `prompts/build.txt` — Prompt conciso para agente de build
-- `opencode.json` — Configuración del modelo y prompts
+- `_opencode.json` — Configuración del modelo y prompts
