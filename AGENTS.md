@@ -110,3 +110,16 @@ The project follows a formal documentation convention defined in `algoritmos/pro
 - **ID registry**: All document IDs tracked in `docs/REGISTRO_IDS.md`
 
 See `algoritmos/propuesta-convencion-documentacion.md` for full details.
+
+## Workflow Script
+
+- `workflow.sh` in repo root — implements the agent programming flow algorithm
+- Documentation: `workflow/020_DEV_WORKFLOW_1_0_DRAFT.md`
+
+## ⚠️ Critical: Node.js Safety
+
+Nunca ejecutar Node.js automáticamente. Todo `npm`, `node`, `prisma`, `jest`
+debe ejecutarse manualmente hasta que se logre estabilizar el script
+`workflow.sh`. Los timeouts de herramientas externas pueden interrumpir la
+ejecución de estos comandos y causar estados inconsistentes.
+

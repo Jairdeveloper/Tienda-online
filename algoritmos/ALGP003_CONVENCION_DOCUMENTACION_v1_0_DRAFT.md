@@ -1,17 +1,34 @@
 ---
-id: propuesta-convencion-docs-v1
-area: algoritmos
-type: PROPUESTA
+id: alg_p_003
+area: algorithms
+type: ALGP
 module: documentation
 version: 1.0
 status: DRAFT
+author: system
+created: 2026-05-30
+last_updated: 2026-05-30
 tags:
   - convention
   - documentation
   - knowledge-base
-  - RAG
+  - proposal
   - naming
 summary: "Propuesta de convención formal para la documentación del proyecto @tienda/api, orientada a convertir la base de conocimiento en un sistema RAG para agentes IA."
+keywords:
+  - convencion
+  - documentacion
+  - knowledge-base
+  - RAG
+  - naming
+  - frontmatter
+  - tags
+changelog:
+  - version: 1.0
+    date: 2026-05-30
+    author: system
+    changes:
+      - "Migración a formato ALGP con ID alg_p_003 y vocabulario controlado de tags"
 ---
 
 # Propuesta de Convención de Documentación — @tienda/api

@@ -13,6 +13,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Knowledge base documentation in `/docs/` with 19 files covering architecture, database schema, API specs, business flows, ADRs, and AI agent prompts
 - `opencode.json` project configuration referencing `opencode/big-pickle` model and `prompts/build.txt`
 - `prompts/build.txt` with concise build agent instructions (tech stack, commands, patterns, CI)
+- `workflow.sh` — script de flujo de programación con agentes IA (7 modos: propose, plan, execute, verify, listen, status, clean/full)
+- `workflow/020_DEV_WORKFLOW_1_0_DRAFT.md` — documentación del script workflow.sh
+- `docs/frontend/021_API_FRONTEND_SPEC_1_0_DRAFT.md` — especificación frontend basada en Postman (10 módulos, 30+ endpoints)
+- `docs/frontend/022_EXEC_FRONTEND_PLAN_1_0_DRAFT.md` — plan de ejecución frontend (7 fases, 22 días estimados)
+
+### Fixed
+- `workflow.sh`: `grep -n` contaminaba `step_num` con números de línea (bug 1)
+- `workflow.sh`: subshell en pipe impedía persistencia de `exec_log` (bug 2)
+- `workflow.sh`: `set -e` causaba salidas prematuras en errores menores (bug 3)
+- `workflow.sh`: templates con `_PENDING_` reemplazados por contenido estructurado (bug 4)
+- `workflow.sh`: `echo -e` producía artifacto `-e` en execution_log (P0-3)
+
+### Changed
+- `workflow.sh`: `execute()` ahora ejecuta comandos reales con `eval`, soporta `DRY_RUN=true` y `CONTINUE_ON_ERROR=true` (P0-1)
+- `workflow.sh`: nuevo flag `--auto` en modo `full` para ciclo sin intervención humana, `AUTO_APPROVE=true` como variable de entorno (P0-2)
+- `workflow.sh`: parseo de steps usa `grep -E "^### Paso [0-9]+:"` para evitar falsos positivos (P1-1)
+- `workflow.sh`: nuevo rollback git automático al fallar un paso, restaura archivos no commiteados (P1-2)
+
+### Added
+- `workflow/023_EXEC_WORKFLOW_IMPROVEMENTS_1_0_DRAFT.md` — plan de mejoras para workflow.sh (9 items, P0-P3)
+- `workflow.sh`: nuevo modo `analyze` que escanea `src/` en busca de archivos, endpoints y módulos relevantes, generando `.workflow/context.md` (P2-1)
+- `workflow.sh`: modo `ai` (ai-propose) que genera propuestas usando `opencode` con contexto del proyecto (P3-2)
+
+### Changed
+- `workflow.sh`: templates de `propose()` y `plan()` ahora inyectan `.workflow/context.md` si existe, reemplazando los hints genéricos con datos concretos del proyecto (P2-2)
+- `workflow.sh`: `execute()` guarda checkpoint tras cada paso y puede reanudar desde el último checkpoint si se interrumpe (P3-1)
+
+### Fixed
+- `workflow.sh`: `full --auto` ya no llama `await-propuesta`/`await-plan` dos veces (bug: líneas 684-685 y 698-699 duplicaban la espera)
 
 ---
 

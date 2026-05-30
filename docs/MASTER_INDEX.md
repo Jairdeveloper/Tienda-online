@@ -7,7 +7,7 @@ version: 1.1
 status: ACTIVE
 author: system
 created: 2026-05-23
-last_updated: 2026-05-30
+last_updated: 2026-05-30T18:35
 dependencies:
   - registro_ids
 tags:
@@ -25,6 +25,11 @@ keywords:
   - dependencias
   - referencia
 changelog:
+  - version: 1.2
+    date: 2026-05-30
+    author: system
+    changes:
+      - "Agregadas referencias a workflow/ y docs/frontend/ con IDs 020, 021, 022"
   - version: 1.1
     date: 2026-05-30
     author: system
@@ -75,9 +80,15 @@ docs/
 │   └── 018_PRM_BUILD_AGENT_1_0_DRAFT.md
 ├── ai/                          # AI knowledge base context
 │   └── 019_AI_KNOWLEDGE_BASE_1_0_DRAFT.md
+├── frontend/                    # Frontend specification docs
+│   ├── 021_API_FRONTEND_SPEC_1_0_DRAFT.md
+│   └── 022_EXEC_FRONTEND_PLAN_1_0_DRAFT.md
 ├── security/                    # Security documentation (future)
 ├── devops/                      # DevOps documentation (future)
 └── archive/                     # Deprecated documents
+
+workflow/                        # Workflow script documentation
+└── 020_DEV_WORKFLOW_1_0_DRAFT.md
 ```
 
 ## Module Dependency Map
@@ -152,10 +163,10 @@ docs/
 
 ## Tag Vocabulary
 
-Tags must use the controlled vocabulary defined in the documentation convention. See `algoritmos/propuesta-convencion-documentacion.md#3-vocabulario-controlado-de-tags`.
+Tags must use the controlled vocabulary defined in the documentation convention. See `algoritmos/ALGP003_CONVENCION_DOCUMENTACION_v1_0_DRAFT.md#3-vocabulario-controlado-de-tags`.
 
 ## Related Documents
 
 - `docs/REGISTRO_IDS.md` — Central registry of all document IDs
-- `algoritmos/propuesta-convencion-documentacion.md` — Documentation convention proposal
+- `algoritmos/ALGP003_CONVENCION_DOCUMENTACION_v1_0_DRAFT.md` — Documentation convention proposal
 - `docs/archive/` — Deprecated documents

@@ -68,6 +68,21 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 |----|---------|------|------|--------|--------|
 | 019 | `019_AI_KNOWLEDGE_BASE_1_0_DRAFT.md` | ai | AI | DRAFT | 2026-05-23 |
 
+## DEV (Development)
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 020 | `020_DEV_WORKFLOW_1_0_DRAFT.md` | dev | DEV | DRAFT | 2026-05-30 |
+| 023 | `023_EXEC_WORKFLOW_IMPROVEMENTS_1_0_DRAFT.md` | dev | EXEC | DRAFT | 2026-05-30 |
+| 024 | `024_DEV_GUIDE_WORKFLOW_1_0_DRAFT.md` | dev | GUIDE | DRAFT | 2026-05-30 |
+
+## Frontend
+
+| ID | Archivo | Área | Tipo | Estado | Creado |
+|----|---------|------|------|--------|--------|
+| 021 | `021_API_FRONTEND_SPEC_1_0_DRAFT.md` | frontend | API | DRAFT | 2026-05-30 |
+| 022 | `022_EXEC_FRONTEND_PLAN_1_0_DRAFT.md` | frontend | EXEC | DRAFT | 2026-05-30 |
+
 ---
 
 ## IDs de Algoritmos (algoritmos/)

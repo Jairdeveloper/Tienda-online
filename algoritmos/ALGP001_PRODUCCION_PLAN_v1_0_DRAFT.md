@@ -1,3 +1,35 @@
+---
+id: alg_p_001
+area: algorithms
+type: ALGP
+module: production
+version: 1.0
+status: DRAFT
+author: system
+created: 2026-05-30
+last_updated: 2026-05-30
+tags:
+  - algorithm
+  - production
+  - devops
+  - proposal
+summary: "Plan detallado para llevar @tienda/api a producción con herramientas 100% gratuitas/open-source: Oracle Cloud Free Tier, Cloudflare, GHCR, Sentry free y Backblaze B2."
+keywords:
+  - produccion
+  - devops
+  - oracle cloud
+  - cloudflare
+  - docker
+  - deployment
+  - plan
+changelog:
+  - version: 1.0
+    date: 2026-05-30
+    author: system
+    changes:
+      - "Migración a formato ALGP con frontmatter YAML y vocabulario controlado de tags"
+---
+
 # Plan de Producción — @tienda/api
 
 **Versión:** 1.0 | **Estado:** DRAFT | **Herramientas:** 100% gratuitas/open-source

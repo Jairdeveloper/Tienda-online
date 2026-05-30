@@ -1,6 +1,6 @@
 ---
-id: alg_p_002
-area: algoritmos
+id: alg_p_004
+area: algorithms
 type: ALGP
 module: system
 version: 1.0
@@ -23,6 +23,14 @@ keywords:
   - human-in-the-loop
   - propuesta
   - plan ejecucion
+dependencies:
+  - alg_p_003
+changelog:
+  - version: 1.0
+    date: 2026-05-30
+    author: system
+    changes:
+      - "Migración a formato ALGP con ID alg_p_004 y vocabulario controlado de tags"
 ---
 
 # Algoritmo: Flujo de Programación con Agentes IA
@@ -452,3 +460,5 @@ PASO 1 → PASO 2 → PASO 3 → PASO 4 → PASO 5 → PASO 6 → PASO 7 → PAS
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
 | 1.0 | 2026-05-30 | Creación inicial del algoritmo de 9 pasos |
+
+

@@ -1,3 +1,37 @@
+---
+id: alg_p_002
+area: algorithms
+type: ALGP
+module: production
+version: 1.0
+status: DRAFT
+author: system
+created: 2026-05-30
+last_updated: 2026-05-30
+dependencies:
+  - alg_p_001
+tags:
+  - algorithm
+  - production
+  - devops
+  - automation
+summary: "Versión algorítmica formal del plan de producción: pasos atómicos con verificación, ramas de decisión (eu.org vs Tunnel), diagrama de flujo y runbook."
+keywords:
+  - algoritmo
+  - produccion
+  - automatizacion
+  - devops
+  - oracle cloud
+  - cloudflare
+  - deployment
+changelog:
+  - version: 1.0
+    date: 2026-05-30
+    author: system
+    changes:
+      - "Migración a formato ALGP con frontmatter YAML y vocabulario controlado de tags"
+---
+
 # Algoritmo de Producción — @tienda/api
 
 **Versión:** 1.0 | **Estado:** DRAFT | **Tipo:** Algoritmo de automatización

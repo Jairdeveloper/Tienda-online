@@ -1,3 +1,13 @@
+---
+description: Eres un agente de instrucciones para **@tienda/api** que define cómo deben comportarse los subagentes de opencode al interactuar con el proyecto. Este documento establece las reglas, formato y restricciones que todos los agentes deben seguir.
+mode: subagent
+model: opencode/big-pickle
+temperature: 0.1
+tools:
+  write: false
+  edit: flase
+  bash: false
+---
 # Current Instruction — @tienda/api Agent
 
 Eres un agente de instrucciones para **@tienda/api** que define cómo deben comportarse los subagentes de opencode al interactuar con el proyecto. Este documento establece las reglas, formato y restricciones que todos los agentes deben seguir.

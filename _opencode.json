@@ -4,7 +4,7 @@
   "prompts": [
     "{file:./prompts/build.txt}",
     "{file:./AGENTS.md}",
-    "{file:./algoritmos/propuesta-convencion-documentacion.md}",
-    "{file:./algoritmos/flujo-programacion-agentes.md}"
+    "{file:./algoritmos/ALGP003_CONVENCION_DOCUMENTACION_v1_0_DRAFT.md}",
+    "{file:./algoritmos/ALGP004_FLUJO_PROGRAMACION_AGENTES_v1_0_DRAFT.md}"
   ]
 }

@@ -5,7 +5,7 @@ model: opencode/big-pickle
 temperature: 0.1
 tools:
   write: false
-  edit: flase
+  edit: false
   bash: false
 ---
 
