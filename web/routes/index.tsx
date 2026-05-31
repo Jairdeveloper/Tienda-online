@@ -6,6 +6,9 @@ import Profile from "../pages/Profile";
 import ProductList from "../pages/ProductList";
 import ProductDetail from "../pages/ProductDetail";
 import CartPage from "../pages/Cart";
+import CheckoutPage from "../pages/Checkout";
+import OrderList from "../pages/OrderList";
+import OrderDetail from "../pages/OrderDetail";
 
 export default function AppRoutes() {
   return (
@@ -16,12 +19,9 @@ export default function AppRoutes() {
       <Route path="/products" element={<ProductList />} />
       <Route path="/products/:id" element={<ProductDetail />} />
       <Route path="/cart" element={<CartPage />} />
-      <Route path="/checkout" element={<div>Checkout - Próximamente</div>} />
-      <Route path="/orders" element={<div>Pedidos - Próximamente</div>} />
-      <Route
-        path="/orders/:id"
-        element={<div>Detalle Pedido - Próximamente</div>}
-      />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/orders" element={<OrderList />} />
+      <Route path="/orders/:id" element={<OrderDetail />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

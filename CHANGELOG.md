@@ -20,28 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Frontend Fase 0 (Setup del Proyecto): scaffolding con Vite 6 + React 19 + TypeScript + Tailwind CSS v4 en raíz del repositorio
-  - `vite.config.ts`: configuración de Vite con proxy `/api` → producción Vercel y alias `@` → `web/`
-  - `web/main.tsx`: entry point React con QueryClientProvider, AuthProvider, BrowserRouter
-  - `web/App.tsx`: componente raíz con MainLayout + Routes
-  - `web/index.css`: Tailwind CSS v4 con `@theme` personalizado (colores primary/secondary/semantic, tipografía)
-  - `web/api/client.ts`: Axios instance con interceptor Bearer + auto-refresh en 401 con cola de requests
-  - `web/contexts/AuthContext.tsx`: contexto de autenticación con login, register, logout, fetchUser, persistencia localStorage
-  - `web/routes/index.tsx`: 10 rutas (Home, Login, Register, Product/:id, Cart, Checkout, Orders, Order/:id, Profile, catch-all)
-  - `web/components/layout/`: Navbar, Sidebar, Footer, MainLayout
-  - `web/pages/Home.tsx`: landing page auth-aware con CTA login/register
-- Frontend Fase 1 (Auth + Usuario): páginas de autenticación y gestión de perfil
-  - `web/pages/Login.tsx`: formulario de login con validación, spinner, errores del servidor, redirect post-login
-  - `web/pages/Register.tsx`: formulario de registro con validaciones (email, password >= 8 chars, confirm match)
-  - `web/pages/Profile.tsx`: ruta protegida con datos de usuario (badges de roles/permissions), edición de nombre, CRUD de direcciones
-  - `web/components/address/AddressCard.tsx`: card de dirección con botones editar/eliminar
-  - `web/components/address/AddressForm.tsx`: formulario reutilizable para crear/editar dirección (7 campos + checkbox default)
-  - `web/components/address/AddressList.tsx`: lista de direcciones con create/edit/delete inline, loading y empty states
-  - `web/hooks/useApi.ts`: hook genérico para llamadas API con estados loading/error/data
-- Documentación de ejecución: `docs/frontend/031_FRONTEND_EXEC_FASE0_1_0_DRAFT.md`, `docs/frontend/032_FRONTEND_EXEC_FASE1_1_0_DRAFT.md`
-- `tsconfig.frontend.json`, `tsconfig.node.json`, `index.html`: configuración de TypeScript y entry point HTML del frontend
-- Dependencias: `react`, `react-dom`, `react-router-dom`, `axios`, `@tanstack/react-query`, `@headlessui/react`, `@heroicons/react`, `vite`, `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite`, `@types/react`, `@types/react-dom`
-- Scripts: `build:frontend`, `dev:frontend`, `preview:frontend`
+- Frontend Fase 3 (Checkout + Órdenes): flujo completo de checkout y gestión de pedidos
+  - `web/types/orders.ts`: interfaces TypeScript para Order, OrderItem, PaymentInfo, CheckoutRequest, CheckoutResponse, PaginatedOrders
+  - `web/components/orders/OrderStatusBadge.tsx`: badge de estado con mapeo de colores para 7 estados del pedido
+  - `web/components/orders/OrderCard.tsx`: tarjeta resumen de pedido para listas (N° orden, fecha, badge, total, items count)
+  - `web/pages/Checkout.tsx`: flujo multi-step (4 pasos) — resumen de carrito, selección de dirección de envío con AddressForm inline, selección de método de pago, confirmación con idempotencyKey, redirect post-checkout a /orders/:id
+  - `web/pages/OrderDetail.tsx`: detalle de pedido con breadcrumb, tabla de artículos, sección de pagos, modal de cancelación con confirmación, link "Pagar ahora" para payment_pending
+  - `web/pages/OrderList.tsx`: historial de pedidos con filtro por estado (pills), paginación reutilizando Pagination de catalog, loading skeleton, empty state con link a catálogo
+- `web/routes/index.tsx`: rutas `/checkout` → CheckoutPage, `/orders` → OrderList, `/orders/:id` → OrderDetail (reemplazados placeholders)
+
 - Frontend Fase 2 (Catálogo + Carrito): páginas y componentes de catálogo y carrito de compras
   - `web/types/catalog.ts`: interfaces TypeScript para Category, Product, ProductVariant, PaginatedResponse, Cart, CartItem, InventoryInfo
   - `web/components/catalog/ProductCard.tsx`: tarjeta de producto con imagen placeholder, nombre, badges de categorías, precio mínimo
@@ -60,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `package.json`: añadidas dependencias frontend (React, Vite, Tailwind, etc.) y scripts de build/dev
-- `docs/REGISTRO_IDS.md`: registrados IDs 031 (Fase 0), 032 (Fase 1), 033 (Fase 2)
+- `docs/REGISTRO_IDS.md`: registrados IDs 031 (Fase 0), 032 (Fase 1), 033 (Fase 2), 034 (Fase 3)
 - `.gitignore`: añadido `dist-frontend/`
 
 - `api/index.js`: monkey-patch para PrismaClient (`configOverride`) que fuerza `postinstall: false` y `ciName: undefined`, solucionando el error "Prisma has detected that this project was built on Vercel" en runtime serverless
