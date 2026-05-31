@@ -76,6 +76,8 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 023 | `023_EXEC_WORKFLOW_IMPROVEMENTS_1_0_DRAFT.md` | dev  | EXEC      | DRAFT  | 2026-05-30 |
 | 024 | `024_DEV_GUIDE_WORKFLOW_1_0_DRAFT.md`         | dev  | GUIDE     | DRAFT  | 2026-05-30 |
 | 025 | `025_DEV_REFERENCE_WORKFLOW_1_0_DRAFT.md`     | dev  | REFERENCE | DRAFT  | 2026-05-31 |
+| 026 | `026_DEV_PROPUESTA_ARTIFACTS_1_0_DRAFT.md`    | dev  | PROPUESTA | DRAFT  | 2026-05-31 |
+| 027 | `027_DEV_PLAN_ARTIFACTS_1_0_DRAFT.md`         | dev  | PLAN      | DRAFT  | 2026-05-31 |
 
 ## Frontend
 
