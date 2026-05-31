@@ -3,6 +3,9 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Profile from "../pages/Profile";
+import ProductList from "../pages/ProductList";
+import ProductDetail from "../pages/ProductDetail";
+import CartPage from "../pages/Cart";
 
 export default function AppRoutes() {
   return (
@@ -10,11 +13,9 @@ export default function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route
-        path="/products/:id"
-        element={<div>Producto - Próximamente</div>}
-      />
-      <Route path="/cart" element={<div>Carrito - Próximamente</div>} />
+      <Route path="/products" element={<ProductList />} />
+      <Route path="/products/:id" element={<ProductDetail />} />
+      <Route path="/cart" element={<CartPage />} />
       <Route path="/checkout" element={<div>Checkout - Próximamente</div>} />
       <Route path="/orders" element={<div>Pedidos - Próximamente</div>} />
       <Route

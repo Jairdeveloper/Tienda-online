@@ -23,6 +23,12 @@ export default function Navbar() {
               Inicio
             </a>
             <a
+              href="/products"
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Catálogo
+            </a>
+            <a
               href="/cart"
               className="text-gray-600 hover:text-gray-900 transition-colors"
             >
@@ -99,6 +105,9 @@ export default function Navbar() {
           <div className="px-4 py-3 space-y-2">
             <a href="/" className="block text-gray-600 py-2">
               Inicio
+            </a>
+            <a href="/products" className="block text-gray-600 py-2">
+              Catálogo
             </a>
             <a href="/cart" className="block text-gray-600 py-2">
               Carrito

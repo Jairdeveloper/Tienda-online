@@ -42,11 +42,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsconfig.frontend.json`, `tsconfig.node.json`, `index.html`: configuración de TypeScript y entry point HTML del frontend
 - Dependencias: `react`, `react-dom`, `react-router-dom`, `axios`, `@tanstack/react-query`, `@headlessui/react`, `@heroicons/react`, `vite`, `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite`, `@types/react`, `@types/react-dom`
 - Scripts: `build:frontend`, `dev:frontend`, `preview:frontend`
+- Frontend Fase 2 (Catálogo + Carrito): páginas y componentes de catálogo y carrito de compras
+  - `web/types/catalog.ts`: interfaces TypeScript para Category, Product, ProductVariant, PaginatedResponse, Cart, CartItem, InventoryInfo
+  - `web/components/catalog/ProductCard.tsx`: tarjeta de producto con imagen placeholder, nombre, badges de categorías, precio mínimo
+  - `web/components/catalog/ProductGrid.tsx`: grid responsive (1-4 columnas) de tarjetas de producto
+  - `web/components/catalog/Pagination.tsx`: controles de paginación con ventana de 5 páginas y elipsis
+  - `web/components/catalog/CategoryFilter.tsx`: barra horizontal de categorías con fetch y skeleton loading
+  - `web/components/catalog/VariantSelector.tsx`: selector de variantes con precio y descuento
+  - `web/components/catalog/StockIndicator.tsx`: indicador de stock (verde/amarillo/rojo) con fetch de inventario
+  - `web/pages/ProductList.tsx`: listado de productos con búsqueda, filtro por categoría, paginación, estados loading/empty/error
+  - `web/pages/ProductDetail.tsx`: detalle de producto con breadcrumb, variantes, stock, botón add-to-cart con auth check
+  - `web/pages/Cart.tsx`: carrito protegido con CRUD de items, +/- cantidad, vaciar, resumen y checkout
+- `web/routes/index.tsx`: rutas actualizadas — `/products` → ProductList, `/products/:id` → ProductDetail, `/cart` → CartPage
+- `web/components/layout/Navbar.tsx`: enlace "Catálogo" añadido en navegación desktop y mobile
+- Documentación de ejecución: `docs/frontend/033_FRONTEND_EXEC_FASE2_1_0_DRAFT.md`
 
 ### Changed
 
 - `package.json`: añadidas dependencias frontend (React, Vite, Tailwind, etc.) y scripts de build/dev
-- `docs/REGISTRO_IDS.md`: registrados IDs 031 (Fase 0) y 032 (Fase 1)
+- `docs/REGISTRO_IDS.md`: registrados IDs 031 (Fase 0), 032 (Fase 1), 033 (Fase 2)
 - `.gitignore`: añadido `dist-frontend/`
 
 - `api/index.js`: monkey-patch para PrismaClient (`configOverride`) que fuerza `postinstall: false` y `ciName: undefined`, solucionando el error "Prisma has detected that this project was built on Vercel" en runtime serverless
