@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { randomUUID } from "crypto";
 import { type INestApplication, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { NestFactory } from "@nestjs/core";
+import { AbstractHttpAdapter, NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
 import type { Request, Response } from "express";
@@ -19,13 +19,11 @@ function toBoolean(value: string | undefined, defaultValue: boolean): boolean {
 }
 
 export async function createApp(
-  adapter?: Parameters<typeof NestFactory.create>[1],
+  adapter?: AbstractHttpAdapter,
 ): Promise<INestApplication> {
-  const app = await NestFactory.create(AppModule, {
-    bufferLogs: true,
-    ...(adapter ? { bodyParser: false } : {}),
-    ...(adapter ? await adapter : {}),
-  });
+  const app = adapter
+    ? await NestFactory.create(AppModule, adapter, { bufferLogs: true })
+    : await NestFactory.create(AppModule, { bufferLogs: true });
   const configService = app.get(ConfigService);
   const logger = app.get(JsonLoggerService);
 
