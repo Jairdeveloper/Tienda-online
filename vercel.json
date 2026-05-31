@@ -1,18 +1,7 @@
 {
-  "framework": null,
-  "builds": [
-    {
-      "src": "api/index.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/api"
-    }
-  ],
-  "buildCommand": "npm run build",
+  "framework": "nestjs",
+  "buildCommand": "rm -rf dist node_modules/.cache && echo 'BUILD_REV=2' && npm run build",
+  "outputDirectory": "dist",
   "installCommand": "npm ci --include=dev",
   "regions": ["iad1"],
   "github": {
