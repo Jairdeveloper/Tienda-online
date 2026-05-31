@@ -7,6 +7,10 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/health.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
@@ -21,6 +25,10 @@
     {
       "src": "/_diag",
       "dest": "api/diagnostic.js"
+    },
+    {
+      "src": "/_health",
+      "dest": "api/health.js"
     },
     {
       "src": "/(.*)",
