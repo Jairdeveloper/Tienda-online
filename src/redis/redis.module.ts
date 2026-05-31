@@ -6,6 +6,17 @@ import { RedisService } from "./redis.service";
 import { RedisLockService } from "./redis-lock.service";
 import { UpstashClient } from "./upstash-client";
 
+const noopClient: RedisClient = {
+  get: async () => null,
+  set: async () => "OK",
+  del: async () => 0,
+  exists: async () => 0,
+  ping: async () => "PONG",
+  scan: async () => ["0", []] as [string, string[]],
+  eval: async () => null,
+  quit: async () => {},
+};
+
 @Global()
 @Module({
   imports: [ConfigModule],
@@ -13,12 +24,17 @@ import { UpstashClient } from "./upstash-client";
     {
       provide: REDIS_CLIENT,
       useFactory: (configService: ConfigService): RedisClient => {
+        const redisUrl = configService.get<string>("REDIS_URL", "");
+
+        if (!redisUrl) {
+          return noopClient;
+        }
+
         const nodeEnv = configService.get<string>("NODE_ENV", "development");
-        const redisUrl = configService.get<string>("REDIS_URL");
 
         if (nodeEnv === "production") {
           const token = configService.get<string>("UPSTASH_REDIS_TOKEN") || "";
-          return new UpstashClient(redisUrl!, token);
+          return new UpstashClient(redisUrl, token);
         }
 
         const Redis = require("ioredis");

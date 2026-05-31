@@ -58,9 +58,10 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 
 ## PRM (Prompts)
 
-| ID  | Archivo                            | Área    | Tipo | Estado | Creado     |
-| --- | ---------------------------------- | ------- | ---- | ------ | ---------- |
-| 018 | `018_PRM_BUILD_AGENT_1_0_DRAFT.md` | prompts | PRM  | DRAFT  | 2026-05-23 |
+| ID  | Archivo                             | Área    | Tipo | Estado | Creado     |
+| --- | ----------------------------------- | ------- | ---- | ------ | ---------- |
+| 018 | `018_PRM_BUILD_AGENT_1_0_DRAFT.md`  | prompts | PRM  | DRAFT  | 2026-05-23 |
+| 028 | `028_PRM_BUILD_AGENTS_1_0_DRAFT.md` | prompts | PRM  | DRAFT  | 2026-05-31 |
 
 ## AI (Knowledge Base)
 
@@ -70,14 +71,16 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 
 ## DEV (Development)
 
-| ID  | Archivo                                       | Área | Tipo      | Estado | Creado     |
-| --- | --------------------------------------------- | ---- | --------- | ------ | ---------- |
-| 020 | `020_DEV_WORKFLOW_1_0_DRAFT.md`               | dev  | DEV       | DRAFT  | 2026-05-30 |
-| 023 | `023_EXEC_WORKFLOW_IMPROVEMENTS_1_0_DRAFT.md` | dev  | EXEC      | DRAFT  | 2026-05-30 |
-| 024 | `024_DEV_GUIDE_WORKFLOW_1_0_DRAFT.md`         | dev  | GUIDE     | DRAFT  | 2026-05-30 |
-| 025 | `025_DEV_REFERENCE_WORKFLOW_1_0_DRAFT.md`     | dev  | REFERENCE | DRAFT  | 2026-05-31 |
-| 026 | `026_DEV_PROPUESTA_ARTIFACTS_1_0_DRAFT.md`    | dev  | PROPUESTA | DRAFT  | 2026-05-31 |
-| 027 | `027_DEV_PLAN_ARTIFACTS_1_0_DRAFT.md`         | dev  | PLAN      | DRAFT  | 2026-05-31 |
+| ID  | Archivo                                                | Área | Tipo      | Estado | Creado     |
+| --- | ------------------------------------------------------ | ---- | --------- | ------ | ---------- |
+| 020 | `020_DEV_WORKFLOW_1_0_DRAFT.md`                        | dev  | DEV       | DRAFT  | 2026-05-30 |
+| 023 | `023_EXEC_WORKFLOW_IMPROVEMENTS_1_0_DRAFT.md`          | dev  | EXEC      | DRAFT  | 2026-05-30 |
+| 024 | `024_DEV_GUIDE_WORKFLOW_1_0_DRAFT.md`                  | dev  | GUIDE     | DRAFT  | 2026-05-30 |
+| 025 | `025_DEV_REFERENCE_WORKFLOW_1_0_DRAFT.md`              | dev  | REFERENCE | DRAFT  | 2026-05-31 |
+| 026 | `026_DEV_PROPUESTA_ARTIFACTS_1_0_DRAFT.md`             | dev  | PROPUESTA | DRAFT  | 2026-05-31 |
+| 027 | `027_DEV_PLAN_ARTIFACTS_1_0_DRAFT.md`                  | dev  | PLAN      | DRAFT  | 2026-05-31 |
+| 029 | `029_EXEC_BUILD_AGENTS_1_0_DRAFT.md`                   | dev  | EXEC      | DRAFT  | 2026-05-31 |
+| 030 | `030_DEV_REFERENCE_AGENT_AUTOIMPROVEMENT_1_0_DRAFT.md` | dev  | REFERENCE | DRAFT  | 2026-05-31 |
 
 ## Frontend
 

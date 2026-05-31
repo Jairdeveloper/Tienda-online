@@ -140,6 +140,9 @@ async function bootstrap(): Promise<void> {
   });
 }
 
+// Vercel: ensure createApp is on module.exports for esbuild bundling
+module.exports = { createApp };
+
 if (!process.env.VERCEL) {
   void bootstrap();
 }

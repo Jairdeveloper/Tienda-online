@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `api/index.js`: monkey-patch para PrismaClient (`configOverride`) que fuerza `postinstall: false` y `ciName: undefined`, solucionando el error "Prisma has detected that this project was built on Vercel" en runtime serverless
+- `vercel.json`: añadido `npx prisma migrate deploy` al build command para aplicar migraciones automáticamente en cada deploy
+- `.opencode/agents/reverse-engineer.md`: nuevo agente de ingeniería inversa para analizar código NestJS/TypeScript y producir documentación en lenguaje natural
+- `.opencode/agents/vercel-deploy.md`: nuevo agente experto en deploy de NestJS en Vercel con Prisma + Neon + Upstash
+- `.opencode/agents/028_PRM_BUILD_AGENTS_1_0_DRAFT.md`: plan de implementación para los 2 nuevos sub-agentes
+- `.opencode/agents/029_EXEC_BUILD_AGENTS_1_0_DRAFT.md`: plan de ejecución para los 2 nuevos sub-agentes
+- `workflow/001_DEV_SPEC_WORKFLOW_AGENT_1_0_DRAFT.md`: especificación completa de comportamiento del workflow-agent (propósito, capacidades, modo de operación, árbol de decisión, restricciones, protocolo de documentación)
+- `workflow/030_DEV_REFERENCE_AGENT_AUTOIMPROVEMENT_1_0_DRAFT.md`: documento de referencia del proceso de auto-mejora del workflow-agent
+
 - `AGENTS.md`: nueva sección "Git & Documentation Protocol" — establece que todo agente DEBE actualizar `CHANGELOG.md` antes de cualquier `git push`, usando `changelog-writer`; aplica a TODOS los agentes del ecosistema
 - `.opencode/agents/workflow-agent.md`: sección 9 "Git Push Protocol" — flujo obligatorio pre-push (analizar cambios → invocar changelog-writer → verificar entrada → incluir en commit → push); sección 9.5 de integración con el árbol de delegación 8.2; nodo `git push` añadido al árbol de decisión de delegación
 - `.opencode/agents/changelog-writer.md`: nuevo sub-workflow "Pre-push invocation" — describe cómo el agente debe ser invocado automáticamente antes de push para documentar cambios
@@ -18,6 +27,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.opencode/agents/about.md`: nueva sección "Protocolo de documentación" con referencia a la regla de pre-push
 - `.opencode/agents/frontend-reviewer.md`: sección "Git & Documentation Protocol" — prohíbe push directo, obliga coordinación con workflow-agent
 - `.opencode/agents/test-writer.md`: sección "Git & Documentation Protocol" — prohíbe push directo, obliga coordinación con workflow-agent
+
+### Changed
+
+- `api/index.js`: mejorado logging (timestamps, contadores ms, env vars) y manejo de errores con try/catch en handler
+- `vercel.json`: build command actualizado para incluir migrations deploy antes de prisma generate
+- `src/prisma/prisma.service.ts`: bypass de VERCEL env var en constructor (aunque es read-only en runtime)
+- `src/redis/redis.module.ts`: mejor manejo de Upstash Redis en producción (lectura de UPSTASH_REDIS_TOKEN)
+- `src/main.ts`: export de createApp() con bootstrap condicional
+- `.opencode/agents/workflow-agent.md`: auto-mejora completa — 8 gaps corregidos contra especificación 001 (nuevas secciones: formato de output, restricciones, convención de documentación; renumeración de secciones 8→9→10)
+- `docs/REGISTRO_IDS.md`: registrados IDs 028, 029, 030
+
+- `.opencode/agents/workflow-agent.md`: ciclo de auto-mejora completo — alineación con especificación `001_DEV_SPEC_WORKFLOW_AGENT_1_0_DRAFT.md`:
+  - Sección 1: añadidas referencias a `001_DEV_SPEC` y `025_DEV_REFERENCE`
+  - Sección 3: Fase 6 marcada como opcional; nuevas subsecciones 3.1 (forma abreviada) y 3.2 (modo solo-propuesta)
+  - Sección 5: nueva subsección 5.1 con 6 reglas "NO hacer" (restricciones de la especificación)
+  - Sección 7 (nueva): "Formato de output" — describe propuestas, planes y comunicación con el usuario
+  - Sección 8: referencias rápidas actualizadas con los nuevos documentos
+  - Secciones renumeradas: Directorio de Agentes 8→9, Git Push Protocol 9→10
+  - Sección 10: nueva subsección 10.6 con convención de documentación del proyecto
+  - Referencias internas corregidas (9.2→10.2 en Enforcement)
+- `workflow/030_DEV_REFERENCE_AGENT_AUTOIMPROVEMENT_1_0_DRAFT.md`: nuevo documento de referencia del proceso de auto-mejora del agente, incluyendo tabla de gaps, cambios realizados y estado post-mejora
+- `docs/REGISTRO_IDS.md`: registro del nuevo ID 030 para el documento de auto-mejora
 
 ### Changed
 
@@ -36,6 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.opencode/agents/current-instruction.md`: indentación corregida en lista de referencias (líneas 117-119 ya no aparecen como sub-items de `_opencode.json`)
 
 ### Fixed
+
+- PrismaClient "Prisma has detected that this project was built on Vercel" error — resuelto mediante monkey-patch con configOverride en api/index.js
 
 - `workflow.sh`: `grep -n` contaminaba `step_num` con números de línea (bug 1)
 - `workflow.sh`: subshell en pipe impedía persistencia de `exec_log` (bug 2)

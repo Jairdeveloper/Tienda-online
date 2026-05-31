@@ -10,3 +10,5 @@ algoritmos/algoritmos.md
 workflow.sh
 workflow/
 algoritmos/
+.vercel
+.env*

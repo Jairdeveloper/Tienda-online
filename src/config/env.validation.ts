@@ -25,8 +25,9 @@ export const validationSchema = Joi.object({
     .uri({ scheme: ["postgresql", "postgres"] })
     .required(),
   REDIS_URL: Joi.string()
-    .uri({ scheme: ["redis", "rediss", "https"] })
-    .required(),
+    .pattern(/^(redis|rediss|https):\/\//)
+    .allow("")
+    .default(""),
   UPSTASH_REDIS_TOKEN: Joi.string().when("NODE_ENV", {
     is: "production",
     then: Joi.string().min(1).required(),

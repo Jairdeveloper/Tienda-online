@@ -1,6 +1,6 @@
 {
   "installCommand": "npm ci --include=dev",
-  "buildCommand": "echo 'BUST_20260531_1' && npm run build",
+  "buildCommand": "npx prisma migrate deploy --schema=prisma/schema.prisma && npx prisma generate --schema=prisma/schema.prisma && echo 'PRISMA_GENERATE_OK' && npm run build",
   "builds": [
     {
       "src": "api/diagnostic.js",
@@ -12,13 +12,7 @@
     },
     {
       "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["dist/**"],
-        "esbuild": {
-          "bundle": false
-        }
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
