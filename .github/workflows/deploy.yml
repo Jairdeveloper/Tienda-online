@@ -1,7 +1,7 @@
-name: CI
+name: Deploy
 
 on:
-  pull_request:
+  push:
     branches: [main]
 
 env:
@@ -61,3 +61,27 @@ jobs:
           DATABASE_URL: postgresql://tienda:tienda_dev@localhost:5432/tienda_online?schema=public
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: ci-jwt-secret-change-me
+
+  verify-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Vercel deployment
+        run: |
+          echo "Vercel auto-deploys on push to main via GitHub integration."
+          echo "Checking deployment status..."
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              "https://tienda-online.vercel.app/api/v1/health" 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ API healthy (HTTP 200)"
+              exit 0
+            fi
+            echo "  Attempt $i/12: HTTP $STATUS — waiting 10s..."
+            sleep 10
+          done
+          echo "❌ API not healthy after 120s"
+          exit 1

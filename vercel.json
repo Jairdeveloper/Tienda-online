@@ -1,17 +1,7 @@
 {
-  "builds": [
-    {
-      "src": "dist/main.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "dist/main.js"
-    }
-  ],
-  "buildCommand": "rm -rf dist && npm run build",
+  "framework": "nestjs",
+  "buildCommand": "rm -rf dist node_modules/.cache && npm run build",
+  "outputDirectory": "dist",
   "installCommand": "npm ci --include=dev",
   "regions": ["iad1"],
   "github": {
