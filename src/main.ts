@@ -1,20 +1,21 @@
-import 'reflect-metadata';
-import { randomUUID } from 'crypto';
-import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
-import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { JsonLoggerService } from './common/logger/json-logger.service';
+import "reflect-metadata";
+import { randomUUID } from "crypto";
+import { ValidationPipe } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { NestFactory } from "@nestjs/core";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import helmet from "helmet";
+import type { Request, Response } from "express";
+import { AppModule } from "./app.module";
+import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import { JsonLoggerService } from "./common/logger/json-logger.service";
 
 function toBoolean(value: string | undefined, defaultValue: boolean): boolean {
   if (value === undefined) {
     return defaultValue;
   }
 
-  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+  return ["1", "true", "yes", "on"].includes(value.toLowerCase());
 }
 
 async function bootstrap(): Promise<void> {
@@ -24,19 +25,21 @@ async function bootstrap(): Promise<void> {
 
   app.useLogger(logger);
 
+  app.use(helmet());
+
   app.use((req: Request, res: Response, next: () => void) => {
-    const requestIdHeader = req.headers['x-request-id'];
+    const requestIdHeader = req.headers["x-request-id"];
     const requestId = Array.isArray(requestIdHeader)
       ? requestIdHeader[0]
-      : requestIdHeader ?? randomUUID();
+      : (requestIdHeader ?? randomUUID());
     const startedAt = Date.now();
 
     req.requestId = requestId;
-    res.setHeader('x-request-id', requestId);
+    res.setHeader("x-request-id", requestId);
 
-    res.on('finish', () => {
+    res.on("finish", () => {
       logger.log({
-        event: 'http_request',
+        event: "http_request",
         requestId,
         method: req.method,
         path: req.originalUrl,
@@ -48,7 +51,7 @@ async function bootstrap(): Promise<void> {
     next();
   });
 
-  const apiPrefix = configService.get<string>('API_PREFIX', 'api/v1');
+  const apiPrefix = configService.get<string>("API_PREFIX", "api/v1");
   app.setGlobalPrefix(apiPrefix);
 
   app.useGlobalPipes(
@@ -61,53 +64,61 @@ async function bootstrap(): Promise<void> {
 
   app.useGlobalFilters(new HttpExceptionFilter(logger));
 
-  const corsEnabled = toBoolean(configService.get<string>('CORS_ENABLED'), true);
+  app.enableShutdownHooks();
+
+  const corsEnabled = toBoolean(
+    configService.get<string>("CORS_ENABLED"),
+    true,
+  );
   if (corsEnabled) {
     const origins = configService
-      .get<string>('CORS_ORIGIN', '')
-      .split(',')
+      .get<string>("CORS_ORIGIN", "")
+      .split(",")
       .map((origin) => origin.trim())
       .filter(Boolean);
 
     app.enableCors({
-      origin: origins.length > 0 ? origins : true,
+      origin: origins.length > 0 ? origins : false,
       credentials: true,
     });
   }
 
-  const swaggerEnabled = toBoolean(configService.get<string>('SWAGGER_ENABLED'), true);
+  const swaggerEnabled = toBoolean(
+    configService.get<string>("SWAGGER_ENABLED"),
+    true,
+  );
   if (swaggerEnabled) {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle(configService.get<string>('SWAGGER_TITLE', 'Tienda API'))
+      .setTitle(configService.get<string>("SWAGGER_TITLE", "Tienda API"))
       .setDescription(
         configService.get<string>(
-          'SWAGGER_DESCRIPTION',
-          'Backend Tienda Online - Autenticación JWT, RBAC, perfil de usuario y direcciones',
+          "SWAGGER_DESCRIPTION",
+          "Backend Tienda Online - Autenticación JWT, RBAC, perfil de usuario y direcciones",
         ),
       )
-      .setVersion(configService.get<string>('SWAGGER_VERSION', '1.0.0'))
+      .setVersion(configService.get<string>("SWAGGER_VERSION", "1.0.0"))
       .addBearerAuth(
         {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Placeholder para autenticacion JWT de fases siguientes',
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "Placeholder para autenticacion JWT de fases siguientes",
         },
-        'bearer',
+        "bearer",
       )
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
-    const swaggerPath = configService.get<string>('SWAGGER_PATH', 'docs');
+    const swaggerPath = configService.get<string>("SWAGGER_PATH", "docs");
     SwaggerModule.setup(`${apiPrefix}/${swaggerPath}`, app, document);
   }
 
-  const port = configService.get<number>('PORT', 3000);
+  const port = configService.get<number>("PORT", 3000);
   await app.listen(port);
 
   logger.log({
-    event: 'application_bootstrapped',
-    service: 'api',
+    event: "application_bootstrapped",
+    service: "api",
     port,
     apiPrefix,
     swaggerEnabled,

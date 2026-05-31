@@ -21,5 +21,9 @@ export const validationSchema = Joi.object({
   JWT_REFRESH_TTL: Joi.number().integer().positive().default(604800),
   DATABASE_URL: Joi.string().uri({ scheme: ['postgresql', 'postgres'] }).required(),
   REDIS_URL: Joi.string().uri({ scheme: ['redis', 'rediss'] }).required(),
-  WEBHOOK_SECRET: Joi.string().min(16).default('dev-webhook-secret-change-in-production'),
+  WEBHOOK_SECRET: Joi.string().min(16).when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.string().min(16).default('dev-webhook-secret-change-in-production'),
+  }),
 });

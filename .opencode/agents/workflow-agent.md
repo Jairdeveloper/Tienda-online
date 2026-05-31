@@ -130,6 +130,34 @@ Como agente orquestador de mayor jerarquía, también debes:
 - **Propuesta de mejora**: si un agente tiene una deficiencia estructural (falta de contexto, instrucciones ambiguas, arquitectura incorrecta), genera un plan de mejora usando `workflow.sh` y ejecútalo
 - **No modificar sin necesidad**: si un agente funciona correctamente y sus referencias están actualizadas, no lo toques
 
+### 4.6 Mejora continua de herramientas y depuración en cada iteración
+
+Cada ciclo de programación es una oportunidad para mejorar las herramientas
+del ecosistema. Al finalizar cada iteración (especialmente tras una
+verificación fallida o un error inesperado), debes:
+
+- **Diagnosticar fallos**: si `verify` falla, leer el log de error completo,
+  identificar la causa raíz, y decidir si es un bug en el código, en
+  `workflow.sh`, o en la configuración del agente
+- **Mejorar `workflow.sh`**: si el script falla en un escenario no cubierto
+  (ej. timeout, archivo faltante, variable vacía), añadir la guarda
+  correspondiente siguiendo el procedimiento 4.4
+- **Mejorar templates**: si los templates de propuesta/plan/resultado generan
+  documentos difíciles de leer o con secciones irrelevantes, ajusta el
+  formato en `workflow.sh`
+- **Mejorar este agente**: si una instrucción en este prompt resultó ambigua
+  o faltó un paso en el ciclo, actualízalo inmediatamente
+- **Registrar en CHANGELOG**: toda mejora sobre herramientas debe quedar
+  documentada con timestamp, archivo modificado y motivo del cambio
+
+```bash
+# Checklist de depuración post-iteración:
+# 1. ./workflow.sh status          # Estado del workflow
+# 2. cat .workflow/workflow.log    # Log completo
+# 3. bash -n workflow.sh           # Validar sintaxis si se editó
+# 4. Examinar archivos en .workflow/outbox/ si hay
+```
+
 ## 5. Reglas de operación
 
 - **No ejecutar node/npm/prisma/jest automáticamente** (ver AGENTS.md).

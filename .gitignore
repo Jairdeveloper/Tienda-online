@@ -5,3 +5,8 @@ coverage/
 *.log
 .DS_Store
 algoritmos/algoritmos.md
+.opencode/
+.workflow
+workflow.sh
+workflow/
+algoritmos/
