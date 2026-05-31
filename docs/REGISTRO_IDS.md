@@ -84,10 +84,12 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 
 ## Frontend
 
-| ID  | Archivo                               | Área     | Tipo | Estado | Creado     |
-| --- | ------------------------------------- | -------- | ---- | ------ | ---------- |
-| 021 | `021_API_FRONTEND_SPEC_1_0_DRAFT.md`  | frontend | API  | DRAFT  | 2026-05-30 |
-| 022 | `022_EXEC_FRONTEND_PLAN_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-30 |
+| ID  | Archivo                                | Área     | Tipo | Estado | Creado     |
+| --- | -------------------------------------- | -------- | ---- | ------ | ---------- |
+| 021 | `021_API_FRONTEND_SPEC_1_0_DRAFT.md`   | frontend | API  | DRAFT  | 2026-05-30 |
+| 022 | `022_EXEC_FRONTEND_PLAN_1_0_DRAFT.md`  | frontend | EXEC | DRAFT  | 2026-05-30 |
+| 031 | `031_FRONTEND_EXEC_FASE0_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
+| 032 | `032_FRONTEND_EXEC_FASE1_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
 
 ---
 
