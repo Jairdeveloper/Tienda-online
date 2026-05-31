@@ -78,8 +78,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `api/index.js`: entry point serverless para Vercel usando `serverless-http` — cachea la instancia de NestJS (cold start) y delega todas las rutas al adaptador Express de la app
-- `serverless-http` como dependencia de producción
+- `api/index.js`: entry point serverless para Vercel — cachea la instancia de NestJS (cold start), envuelve el adaptador Express con una Promise que resuelve en el evento `finish` para compatibilidad con `@vercel/node`
+
+### Removed
+
+- `serverless-http` — incompatible con la firma `(req, res)` de Vercel (espera formato AWS Lambda `(event, context)`); reemplazado por wrapper directo con Promise
 
 ---
 
