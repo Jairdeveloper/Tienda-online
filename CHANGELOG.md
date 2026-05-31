@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - PrismaClient "Prisma has detected that this project was built on Vercel" error — resuelto mediante monkey-patch con configOverride en api/index.js
+- `api/index.js`: movido `require("../dist/main")` de handler lazy a scope top-level para que Vercel static file tracing (nft) detecte la dependencia — soluciona `Cannot find module '../dist/main'` en producción
+- `vercel.json`: añadido `includeFiles: dist/**` en build config de `api/index.js` para garantizar que `dist/` se incluya en el lambda bundle
 
 - `workflow.sh`: `grep -n` contaminaba `step_num` con números de línea (bug 1)
 - `workflow.sh`: subshell en pipe impedía persistencia de `exec_log` (bug 2)

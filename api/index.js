@@ -19,6 +19,13 @@ prismaModule.PrismaClient = new Proxy(OrigPrismaClient, {
 
 let app;
 let initError;
+let mod;
+
+try {
+  mod = require("../dist/main");
+} catch (err) {
+  initError = err;
+}
 
 process.on("uncaughtException", (err) => {
   console.error(
@@ -46,11 +53,9 @@ module.exports = async (req, res) => {
   log("REDIS_URL_SET:", !!process.env.REDIS_URL);
 
   try {
-    if (!app) {
-      log("LOADING_MODULE");
-      const mod = require("../dist/main");
-      log("MODULE_KEYS:", Object.keys(mod));
+    if (initError) throw initError;
 
+    if (!app) {
       log("CREATING_APP");
       app = await mod.createApp();
       log("APP_CREATED");
@@ -76,7 +81,6 @@ module.exports = async (req, res) => {
       err.message,
       err.stack?.split("\n").slice(0, 5).join(" | "),
     );
-    if (initError === undefined) initError = err;
     if (!res.headersSent) {
       try {
         res.status(500).json({
