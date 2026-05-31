@@ -2,7 +2,7 @@
   "framework": "nestjs",
   "buildCommand": "rm -rf dist && npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci",
+  "installCommand": "npm ci --include=dev",
   "regions": ["iad1"],
   "github": {
     "silent": true
