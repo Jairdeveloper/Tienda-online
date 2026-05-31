@@ -73,7 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `vercel.json`: restaurado preset `"framework": "nestjs"` con `installCommand: "npm ci --include=dev"` y `buildCommand: "rm -rf dist node_modules/.cache && npm run build"` para corregir despliegue en Vercel — el `{}` zero-config previo causaba error `"Invalid export in main.js"` porque el bootstrap asíncrono de NestJS no es compatible con las expectativas de zero-config de Vercel
+- `vercel.json`: reemplazado preset `"framework": "nestjs"` por build explícito con `@vercel/node` apuntando a `api/index.js` — el preset de NestJS no funcionaba correctamente (seguía mostrando error `"Invalid export in main.js"` aunque el build se completaba)
+- `src/main.ts`: bootstrap condicional (`if (!process.env.VERCEL)`) para que `api/index.js` pueda importar `createApp()` sin que `app.listen()` se ejecute en el entorno serverless
+
+### Added
+
+- `api/index.js`: entry point serverless para Vercel usando `serverless-http` — cachea la instancia de NestJS (cold start) y delega todas las rutas al adaptador Express de la app
+- `serverless-http` como dependencia de producción
 
 ---
 

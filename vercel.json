@@ -1,5 +1,16 @@
 {
-  "framework": "nestjs",
   "installCommand": "npm ci --include=dev",
-  "buildCommand": "rm -rf dist node_modules/.cache && npm run build"
+  "buildCommand": "npm run build",
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.js"
+    }
+  ]
 }

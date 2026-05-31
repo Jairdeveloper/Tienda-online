@@ -140,4 +140,6 @@ async function bootstrap(): Promise<void> {
   });
 }
 
-void bootstrap();
+if (!process.env.VERCEL) {
+  void bootstrap();
+}
