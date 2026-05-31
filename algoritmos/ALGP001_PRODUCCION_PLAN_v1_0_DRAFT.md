@@ -13,7 +13,10 @@ tags:
   - production
   - devops
   - proposal
-summary: "Plan detallado para llevar @tienda/api a producción con herramientas 100% gratuitas/open-source: Oracle Cloud Free Tier, Cloudflare, GHCR, Sentry free y Backblaze B2."
+  - serverless
+  - vercel
+  - neon
+summary: "Plan detallado para llevar @tienda/api a producción con herramientas 100% gratuitas/open-source. Dos opciones: Opción Free (Vercel+Neon+Upstash, sin tarjeta de crédito) y Opción VPS (Oracle Cloud Free Tier, requiere tarjeta). Cloudflare, GHCR, Sentry free y Backblaze B2."
 keywords:
   - produccion
   - devops
@@ -23,6 +26,14 @@ keywords:
   - deployment
   - plan
 changelog:
+  - version: 1.0
+    date: 2026-05-31
+    author: user
+    changes:
+      - "Añadida Opción 1.1 Free (Vercel+Neon+Upstash) sin tarjeta de crédito"
+      - "Oracle Cloud renombrado a 1.2 como opción de pago (hold $1 reembolsable)"
+      - "Tabla de infraestructura dividida en Camino A (serverless) y Camino B (VPS)"
+      - "Tabla de costos actualizada con ambas opciones"
   - version: 1.0
     date: 2026-05-30
     author: system
@@ -72,11 +83,25 @@ changelog:
                         └───────────────┘
 ```
 
-## Infraestructura (Todo gratis)
+## Infraestructura (Todo gratis) — Dos caminos
+
+### Camino A: Sin tarjeta de crédito ⭐ (serverless)
+
+| Recurso | Proveedor | Costo | ¿Tarjeta? |
+|---------|-----------|-------|:----------:|
+| **API NestJS** | Vercel Hobby (Fluid Compute) | **$0** | ❌ No |
+| **PostgreSQL** | Neon Free Tier | **$0** (0.5GB, 100 CU-hrs) | ❌ No |
+| **Redis** | Upstash Free Tier | **$0** (10MB, REST API) | ❌ No |
+| **Dominio** | Vercel subdominio `.vercel.app` | **$0** | ❌ No |
+| **CI/CD** | GitHub Actions | **$0** (2000 min/mes) | ❌ No |
+| **SSL** | Automático (Vercel + Neon) | **$0** | ❌ No |
+| **Error tracking** | Sentry (free tier) | **$0** (5k eventos/mes) | ❌ No |
+
+### Camino B: VPS (requiere tarjeta para verificación)
 
 | Recurso | Proveedor | Costo | Detalle |
 |---------|-----------|-------|---------|
-| **Servidor** | Oracle Cloud Always Free | **$0** | VM.ARM.Standard.A1 (4 OCPU, 24GB RAM, 200GB disco) |
+| **Servidor** | Oracle Cloud Always Free | **$0** (hold $1 reembolsable) | VM.ARM.Standard.A1 (4 OCPU, 24GB RAM, 200GB disco) |
 | **Dominio** | Opción A: eu.org | **$0** | Dominio .eu.org gratis (aprobación manual 1-3 días) |
 | **Dominio** | Opción B: Cloudflare Tunnel | **$0** | Tunel directo + workers.dev subdominio, sin IP pública |
 | **DNS + SSL + CDN** | Cloudflare (free tier) | **$0** | DNS, SSL automático, WAF básico, DDoS protection |
@@ -90,8 +115,6 @@ changelog:
 | **Logging** | Loki + Grafana (auto-gestionado) | **$0** | Open source, mismo VPS |
 | **Backups** | cron + rclone + Backblaze B2 | **$0** | B2: 10GB free, rclone encrypts |
 | **Notificaciones** | Telegram Bot API | **$0** | Alertas de monitoreo |
-
-> **Alternativa serverless (sin VPS):** Fly.io (3 VMs gratis) + Neon Postgres (0.5GB free) + Upstash Redis (10MB free). Límites más ajustados pero cero mantenimiento de servidor.
 
 ---
 
@@ -177,15 +200,80 @@ Ya existen, solo verificar que `start:prod` funcione correctamente.
 
 ## Fase 1: Infraestructura (2-3 días)
 
-### 1.1 — Obtener servidor (Oracle Cloud Free Tier)
+### 1.1 — Opción Free (sin tarjeta de crédito) ⭐ RECOMENDADA
 
-1. Registrarse en [Oracle Cloud](https://www.oracle.com/cloud/free/) (requiere tarjeta para verificación, no cobra)
-2. Crear VM.ARM.Standard.A1 (4 OCPU, 24GB RAM, 200GB disco)
+Si no quieres ni el hold de $1 de Oracle Cloud, usa esta arquitectura
+**serverless 100% gratuita** que no requiere tarjeta en ninguno de sus servicios:
+
+| Componente | Servicio | Costo | ¿Requiere tarjeta? |
+|------------|----------|-------|:------------------:|
+| **API NestJS** | Vercel Hobby (Fluid Compute) | $0 | ❌ No |
+| **PostgreSQL** | Neon Free Tier | $0 (0.5GB, 100 CU-hrs/mes) | ❌ No |
+| **Redis** | Upstash Free Tier | $0 (10MB, 5k cmd/día) | ❌ No |
+| **Dominio** | Vercel subdomain `.vercel.app` o Cloudflare Tunnel | $0 | ❌ No |
+| **CI/CD** | GitHub Actions | $0 (2000 min/mes) | ❌ No |
+| **SSL** | Automático (Vercel + Neon) | $0 | ❌ No |
+
+#### Paso a paso
+
+**1. Postgres — Neon**
+- Ir a [neon.com](https://neon.com) y registrarse (GitHub or email, sin tarjeta)
+- Crear proyecto, copiar connection string (`postgresql://...`)
+- Neon incluye PgBouncer pooling — usar string con `?pgbouncer=true` para Prisma
+- La DB se duerme tras 5 min sin uso y despierta automáticamente
+
+**2. Redis — Upstash**
+- Ir a [upstash.com](https://upstash.com) y registrarse con GitHub
+- Crear base de datos Redis (región cercana a Neon)
+- Copiar `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`
+- Usar REST API en vez de TCP (Upstash no expone puerto TCP en free)
+
+Adaptar `redis.service.ts` para usar REST API de Upstash:
+```typescript
+// En lugar de ioredis TCP, usar fetch REST
+const response = await fetch(`${redisUrl}/get/${key}`, {
+  headers: { Authorization: `Bearer ${redisToken}` },
+});
+```
+
+**3. API — Vercel (NestJS)**
+- Vercel Hobby detecta NestJS automáticamente (zero-config)
+- Conectar repo de GitHub → Vercel despliega en segundos
+- Configurar variables de entorno en Vercel Dashboard:
+  ```
+  NODE_ENV=production
+  DATABASE_URL=postgresql://...
+  REDIS_URL=<upstash-rest-url>
+  UPSTASH_REDIS_TOKEN=<token>
+  JWT_SECRET=<string-aleatorio>
+  WEBHOOK_SECRET=<string-aleatorio>
+  CORS_ORIGIN=<tu-dominio>
+  SWAGGER_ENABLED=false
+  ```
+- Límites Hobby: 100 deploys/día, timeout 120s, 250MB función
+
+**4. Dominio (opcional)**
+- Por defecto: `tu-app.vercel.app`
+- Cloudflare Tunnel gratuito si quieres dominio propio sin tarjeta
+
+**Limitaciones de esta opción:**
+- Serverless (no hay VPS persistente, la función se "enfría" sin tráfico)
+- Timeout máximo 120s por request (no apto para WebSockets largos)
+- 0.5GB Postgres, 10MB Redis — suficiente para producción pequeña
+- No hay monitoreo Prometheus/Grafana auto-gestionado (usar Sentry free + Vercel Analytics)
+
+### 1.2 — Oracle Cloud Free Tier (requiere tarjeta para verificación)
+
+> **Nota:** Oracle Cloud requiere tarjeta para verificar identidad. Hacen un hold de $1
+> que se reembolsa. No hay cobro real si no excedes los límites del Always Free Tier.
+
+1. Registrarse en [Oracle Cloud](https://www.oracle.com/cloud/free/)
+2. Crear VM.ARM.Standard.A1 (4 OCPU, 24GB RAM, 200GB disco) ✓ ARM64
 3. Elegir Canonical Ubuntu 24.04 LTS
 4. Configurar firewall (security list): abrir puertos 80, 443, 22 (ssh desde tu IP)
 5. Configurar ssh key + deshabilitar password auth
 
-### 1.2 — Instalar Docker y Docker Compose
+#### 1.2.1 — Instalar Docker y Docker Compose
 
 ```bash
 # En el VPS
@@ -193,11 +281,11 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 ```
 
-### 1.3 — Dominio y Cloudflare
+#### 1.2.2 — Dominio y Cloudflare
 
 Elige **una** de estas dos opciones gratuitas:
 
-#### Opción A: Dominio .eu.org (gratis, recomendada)
+##### Opción A: Dominio .eu.org (gratis, recomendada)
 
 1. Ir a [nic.eu.org](https://nic.eu.org) y registrarse
 2. Solicitar un dominio (ej: `tienda-api.eu.org`)
@@ -252,7 +340,7 @@ Elige **una** de estas dos opciones gratuitas:
 7. **Ventaja:** No necesitas abrir puertos 80/443, no necesitas IP pública. Cloudflare Tunnel conecta directo.
 8. **SSL automático** — Cloudflare maneja el certificado.
 
-### 1.4 — Nginx reverse proxy (solo Opción A)
+#### 1.2.3 — Nginx reverse proxy (solo Opción A)
 
 > Si usas **Opción B (Cloudflare Tunnel)**, no necesitas Nginx expuesto. El Docker Compose de producción incluye `cloudflared` como servicio y se conecta directo a la API interna.
 
@@ -295,7 +383,7 @@ server {
 
 Certificado SSL automático con Cloudflare Origin Certificate (gratis).
 
-### 1.5 — Docker Compose de producción
+#### 1.2.4 — Docker Compose de producción
 
 Crear `ops/docker-compose.prod.yml`:
 
@@ -836,18 +924,20 @@ artillery quick --count 50 --num 10 https://api.tudominio.com/api/v1/health
 
 ---
 
-## Costo mensual total
+## Costo mensual total (ambas opciones)
 
-| Recurso | Costo |
-|---------|-------|
-| Oracle Cloud VPS | $0 |
-| Dominio (eu.org o Cloudflare Tunnel) | $0 |
-| Cloudflare (DNS + SSL + WAF) | $0 |
-| GitHub Actions CI/CD | $0 |
-| GHCR (Container Registry) | $0 |
-| Sentry (5k eventos/mes) | $0 |
-| Backblaze B2 (10GB) | $0 |
-| **Total** | **$0/mes** |
+| Recurso | Camino A: Serverless | Camino B: VPS (Oracle) |
+|---------|:--------------------:|:----------------------:|
+| Servidor / Compute | Vercel Hobby — **$0** | Oracle Cloud — **$0** |
+| PostgreSQL | Neon — **$0** | Auto-gestionado — **$0** |
+| Redis | Upstash — **$0** | Auto-gestionado — **$0** |
+| Dominio | `.vercel.app` — **$0** | eu.org o Tunnel — **$0** |
+| DNS + SSL | Incluido — **$0** | Cloudflare — **$0** |
+| CI/CD | GitHub Actions — **$0** | GitHub Actions — **$0** |
+| Monitoreo | Sentry free — **$0** | Prometheus+Grafana — **$0** |
+| Backups | Neon built-in — **$0** | Backblaze B2 — **$0** |
+| **Total** | **$0/mes** | **$0/mes** |
+| **¿Requiere tarjeta?** | **❌ No** | **⚠️ Sí (hold $1)** |
 
 > **Alternativa de pago (futuro):** Dominio .com .io .dev (~$8-12/año en Cloudflare Registrar o Namecheap). Recomendado cuando el proyecto esté consolidado, por profesionalismo y confianza del usuario.
 >
