@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { randomUUID } from "crypto";
-import { ValidationPipe } from "@nestjs/common";
+import { type INestApplication, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
@@ -18,8 +18,14 @@ function toBoolean(value: string | undefined, defaultValue: boolean): boolean {
   return ["1", "true", "yes", "on"].includes(value.toLowerCase());
 }
 
-async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+export async function createApp(
+  adapter?: Parameters<typeof NestFactory.create>[1],
+): Promise<INestApplication> {
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    ...(adapter ? { bodyParser: false } : {}),
+    ...(adapter ? await adapter : {}),
+  });
   const configService = app.get(ConfigService);
   const logger = app.get(JsonLoggerService);
 
@@ -113,15 +119,26 @@ async function bootstrap(): Promise<void> {
     SwaggerModule.setup(`${apiPrefix}/${swaggerPath}`, app, document);
   }
 
+  return app;
+}
+
+async function bootstrap(): Promise<void> {
+  const app = await createApp();
+  const configService = app.get(ConfigService);
+  const logger = app.get(JsonLoggerService);
   const port = configService.get<number>("PORT", 3000);
+
   await app.listen(port);
 
   logger.log({
     event: "application_bootstrapped",
     service: "api",
     port,
-    apiPrefix,
-    swaggerEnabled,
+    apiPrefix: configService.get<string>("API_PREFIX", "api/v1"),
+    swaggerEnabled: toBoolean(
+      configService.get<string>("SWAGGER_ENABLED"),
+      true,
+    ),
   });
 }
 
