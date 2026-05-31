@@ -1,10 +1,1 @@
-{
-  "framework": "nestjs",
-  "buildCommand": "rm -rf dist node_modules/.cache && echo 'BUILD_REV=2' && npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm ci --include=dev",
-  "regions": ["iad1"],
-  "github": {
-    "silent": true
-  }
-}
+{}
