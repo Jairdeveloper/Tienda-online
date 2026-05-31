@@ -86,6 +86,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Workflow
 
+### Pre-push invocation (mandatory)
+
+You are **automatically invoked by the `workflow-agent` before any `git push`** to ensure all changes are documented. When called for this purpose:
+
+1. Receive the list of changes from the orchestrator (or run `git diff --stat HEAD`)
+2. Analyze what files changed and what the changes do
+3. Add an entry to the `[Unreleased]` section with:
+   - Appropriate category (`Added`, `Changed`, `Fixed`, `Removed`, `Deprecated`, `Security`)
+   - Description of each change, referencing specific files/modules
+   - Reason for the change when relevant (e.g., "Fixes #42", "Closes N+1 query")
+4. Confirm back to the orchestrator that `CHANGELOG.md` was updated
+
+### Release workflow
+
 1. Analyze diff between last release and current state (`git log` or file comparison)
 2. Categorize each change into the appropriate section
 3. Update `[Unreleased]` section with new additions

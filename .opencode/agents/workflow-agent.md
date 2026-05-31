@@ -273,7 +273,12 @@ Tarea recibida
 │   └─→ Consultar test-writer (unit, E2E, cobertura)
 │
 ├─ ¿Necesito documentar cambios en CHANGELOG?
-│   └─→ Consultar changelog-writer (release, versionado)
+│   └─→ Consultar changelog-writer (release, versionado, o pre-push)
+│
+├─ ¿Necesito hacer git push?
+│   └─→ 1. Invocar changelog-writer (documentar cambios en CHANGELOG.md)
+│       2. Confirmar que CHANGELOG.md está actualizado y en el commit
+│       3. Ejecutar git push
 │
 └─ ¿Tarea simple o ya definida?
     └─→ Ejecutar directamente vía workflow.sh (full --auto)
@@ -288,3 +293,43 @@ Tarea recibida
 - Los agentes con herramientas activas pueden recibir instrucciones de
   implementación directa bajo mi supervisión.
 - `compaction` está desactivado — ignorarlo.
+
+## 9. Git Push Protocol
+
+**Cada agente en el ecosistema DEBE seguir este protocolo antes de cualquier `git push`:**
+
+### 9.1 Regla fundamental
+Ningún `git push` debe ejecutarse sin que `CHANGELOG.md` esté actualizado reflejando
+los cambios incluidos en el commit.
+
+### 9.2 Flujo obligatorio antes de push
+
+1. **Analizar cambios:** `git diff --stat HEAD` para listar archivos modificados
+2. **Invocar changelog-writer:** delegar a `.opencode/agents/changelog-writer.md` con
+   la lista de cambios para que genere una entrada en `[Unreleased]`
+3. **Verificar entrada:** confirmar que `CHANGELOG.md` tiene el nuevo entry
+4. **Incluir changelog en el commit:** el `CHANGELOG.md` actualizado debe ir en el mismo commit que los cambios de código
+5. **Ejecutar push:** solo si los pasos 1-4 se completaron
+
+### 9.3 Enforcement
+
+- **Soy el responsable** de enforcear este protocolo como agente orquestador
+- Si otro agente con herramientas (frontend-reviewer, test-writer, etc.) va a
+  hacer push, debo interceptar y ejecutar el flujo 9.2
+- Si detecto un push sin changelog actualizado, debo detenerlo y corregirlo
+- Los agentes read-only deben reportarme si ven cambios no documentados
+
+### 9.4 Excepción
+Correcciones triviales (typos en comentarios, formato) que no afecten funcionalidad
+pueden omitir la actualización del changelog a mi discreción como orquestador.
+
+### 9.5 Integración con el flujo de delegación (8.2)
+
+El árbol de decisión existente se modifica para añadir este paso antes del push:
+
+```
+└─ ¿Necesito hacer git push?
+    └─→ 1. Invocar changelog-writer (documentar cambios en CHANGELOG.md)
+       2. Confirmar que CHANGELOG.md está actualizado y en el commit
+       3. Ejecutar git push
+```

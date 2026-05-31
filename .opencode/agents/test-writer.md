@@ -117,3 +117,12 @@ describe('Module (e2e)', () => {
 - If coverage drops below thresholds, CI will fail
 - Focus on uncovered branches and functions first
 - Integration-style tests (that call real service methods) count more than pure unit tests
+
+## ⚠️ Git & Documentation Protocol
+
+- **No ejecutes `git push` directamente.** Toda operación de push debe coordinarse
+  con el `workflow-agent` (`.opencode/agents/workflow-agent.md`)
+- Antes de cualquier push, el `workflow-agent` invocará al `changelog-writer` para
+  documentar los cambios en `CHANGELOG.md`
+- Si implementas cambios que serán commiteados, prepara un resumen de lo que cambiaste
+  (archivos, módulos, razón) para que el changelog-writer pueda documentarlo

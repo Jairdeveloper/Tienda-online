@@ -248,3 +248,12 @@ Los PNGs en `BASE DE CONOCIMIENTO/Arquitectura/design/` contienen los prototipos
 - NO agregar dependencias adicionales sin justificacion
 - Mantener la estructura de carpetas existente en `services/frontend/src/`
 - No ejecutar npm install ni scripts de Node.js
+
+## ⚠️ Git & Documentation Protocol
+
+- **No ejecutes `git push` directamente.** Toda operación de push debe coordinarse
+  con el `workflow-agent` (`.opencode/agents/workflow-agent.md`)
+- Antes de cualquier push, el `workflow-agent` invocará al `changelog-writer` para
+  documentar los cambios en `CHANGELOG.md`
+- Si implementas cambios que serán commiteados, prepara un resumen de lo que cambiaste
+  (archivos, módulos, razón) para que el changelog-writer pueda documentarlo

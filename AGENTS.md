@@ -57,11 +57,13 @@ npm run db:seed            # prisma db seed (uses ts-node prisma/seed.ts)
 ## Env vars
 
 **Required** — app crashes without these:
+
 - `JWT_SECRET` — min 8 chars
 - `DATABASE_URL` — `postgresql://` or `postgres://` URI
 - `REDIS_URL` — `redis://` or `rediss://` URI
 
 **Key optional** (defaults work for dev):
+
 - `PORT=3000`, `API_PREFIX=api/v1`, `CORS_ENABLED=true`, `CORS_ORIGIN` (comma-separated, '' = all origins)
 - `SWAGGER_ENABLED=true`, `SWAGGER_PATH=docs`
 - `JWT_ACCESS_TTL=900`, `JWT_REFRESH_TTL=604800`
@@ -89,6 +91,7 @@ Full schema: `src/config/env.validation.ts` (Joi). Config loads from single `.en
 ## CI
 
 GitHub Actions workflow in `.github/workflows/ci.yml`:
+
 - Runs on push/PR to `main`
 - Spins up PostgreSQL + Redis as service containers
 - `npm ci` → `prisma generate` → `prisma migrate deploy` → `npm run build` → `npm test` → `npm run test:e2e`
@@ -103,6 +106,7 @@ GitHub Actions workflow in `.github/workflows/ci.yml`:
 ## Documentation Convention
 
 The project follows a formal documentation convention defined in `algoritmos/propuesta-convencion-documentacion.md`. Key points:
+
 - **Naming**: `[ID]_[AREA]_[TIPO]_[MODULO]_[VERSION]_[ESTADO].md` (e.g. `003_API_AUTH_1_0_DRAFT.md`)
 - **Frontmatter**: Every `.md` doc has YAML frontmatter with `id`, `area`, `type`, `module`, `version`, `status`, `tags`, `summary`, `keywords`, `changelog`
 - **Tags**: Controlled vocabulary per section 3 of the convention proposal
@@ -116,10 +120,35 @@ See `algoritmos/propuesta-convencion-documentacion.md` for full details.
 - `workflow.sh` in repo root — implements the agent programming flow algorithm
 - Documentation: `workflow/020_DEV_WORKFLOW_1_0_DRAFT.md`
 
+## Git & Documentation Protocol
+
+**Every agent in the ecosystem MUST follow this protocol before any `git push`:**
+
+### Mandatory documentation update
+
+1. Before executing `git push`, the orchestrating agent **MUST** update `CHANGELOG.md` with an entry in the `[Unreleased]` section describing the changes about to be pushed
+2. The changelog entry MUST include: what changed, which files were modified, and the reason for the change
+3. Use the `changelog-writer` agent (`.opencode/agents/changelog-writer.md`) to generate the entry — it knows the correct format (Keep a Changelog + SemVer)
+
+### Scope
+
+- This rule applies to **ALL agents** in the ecosystem, regardless of tool permissions
+- Agents with write/edit/bash tools that can execute `git push` MUST NOT push until changelog is updated
+- Agents without write tools (read-only) MUST raise a warning if they detect changes that aren't documented
+
+### Exception
+
+- Trivial fixes (typos in comments, formatting) that don't affect functionality may skip changelog update at the orchestrator's discretion
+
+### Enforcement
+
+- The `workflow-agent` (`.opencode/agents/workflow-agent.md`) is responsible for enforcing this protocol
+- Before any push operation, the workflow-agent MUST invoke `changelog-writer` to document the changes
+- After push, verify that `CHANGELOG.md` was committed alongside the code changes
+
 ## ⚠️ Critical: Node.js Safety
 
 Nunca ejecutar Node.js automáticamente. Todo `npm`, `node`, `prisma`, `jest`
 debe ejecutarse manualmente hasta que se logre estabilizar el script
 `workflow.sh`. Los timeouts de herramientas externas pueden interrumpir la
 ejecución de estos comandos y causar estados inconsistentes.
-

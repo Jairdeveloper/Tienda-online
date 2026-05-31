@@ -157,6 +157,13 @@ GitHub Actions en `.github/workflows/ci.yml`:
 └── docker-compose.yml      # PostgreSQL + Redis + API
 ```
 
+## Protocolo de documentación
+
+- **Regla crítica:** Todo `git push` requiere que `CHANGELOG.md` esté actualizado.
+  Ver `AGENTS.md` → "Git & Documentation Protocol" para la política completa.
+  El `workflow-agent` es responsable de enforcear esta regla invocando al
+  `changelog-writer` antes de cada push.
+
 ## Referencias
 
 - `AGENTS.md` — Guía principal de agente en raíz del proyecto
