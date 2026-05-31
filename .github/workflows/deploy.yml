@@ -72,10 +72,13 @@ jobs:
           echo "Checking deployment status..."
 
       - name: Health check
+        env:
+          VERCEL_URL: ${{ vars.VERCEL_URL }}
         run: |
+          API_URL="${VERCEL_URL:-https://tienda-online.vercel.app}/api/v1/health"
           for i in $(seq 1 12); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              "https://tienda-online.vercel.app/api/v1/health" 2>/dev/null || echo "000")
+              "${API_URL}" 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "✅ API healthy (HTTP 200)"
               exit 0
