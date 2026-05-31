@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Redis graceful degradation: `UpstashClient`, `CacheService` y `RedisLockService` ahora capturan errores de conexión Redis (WRONGPASS, timeouts) y degradan gracefulmente — cache miss retorna null, locks retornan false, el endpoint `/api/v1/health` reporta `status: degraded` con detalle del error en `redisDetail`
+- Migraciones de Prisma aplicadas correctamente a Neon DB (`prisma migrate deploy`): 3 migraciones (baseline, business entities, remove telegram fields) ejecutadas contra la base de datos de producción
+
+### Changed
+
+- `vercel.json`: las variables de entorno `REDIS_URL` y `UPSTASH_REDIS_TOKEN` actualizadas con los valores correctos de Upstash (REST API)
+
 ### Added
 
 - `api/index.js`: monkey-patch para PrismaClient (`configOverride`) que fuerza `postinstall: false` y `ciName: undefined`, solucionando el error "Prisma has detected that this project was built on Vercel" en runtime serverless

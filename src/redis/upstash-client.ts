@@ -8,51 +8,90 @@ export class UpstashClient {
   }
 
   async get(key: string): Promise<string | null> {
-    return this.client.get(key);
+    try {
+      return await this.client.get(key);
+    } catch (e) {
+      console.error(
+        `Upstash GET error [${key}]:`,
+        e instanceof Error ? e.message : e,
+      );
+      return null;
+    }
   }
 
   async set(key: string, value: string | number, ...args: any[]): Promise<any> {
-    if (args.length === 0) {
-      return this.client.set(key, value);
-    }
+    try {
+      if (args.length === 0) {
+        return this.client.set(key, value);
+      }
 
-    const exIdx = args.indexOf("EX");
-    const nxIdx = args.indexOf("NX");
+      const exIdx = args.indexOf("EX");
+      const nxIdx = args.indexOf("NX");
 
-    const options: Record<string, any> = {};
-    if (exIdx !== -1 && args[exIdx + 1]) {
-      options.ex = args[exIdx + 1];
-    }
-    if (nxIdx !== -1) {
-      options.nx = true;
-    }
+      const options: Record<string, any> = {};
+      if (exIdx !== -1 && args[exIdx + 1]) {
+        options.ex = args[exIdx + 1];
+      }
+      if (nxIdx !== -1) {
+        options.nx = true;
+      }
 
-    return this.client.set(key, value, options);
+      return this.client.set(key, value, options);
+    } catch (e) {
+      console.error(
+        `Upstash SET error [${key}]:`,
+        e instanceof Error ? e.message : e,
+      );
+    }
   }
 
   async del(...keys: string[]): Promise<number> {
-    if (keys.length === 0) return 0;
-    if (keys.length === 1) return this.client.del(keys[0]);
-    let count = 0;
-    for (const key of keys) {
-      count += await this.client.del(key);
+    try {
+      if (keys.length === 0) return 0;
+      if (keys.length === 1) return this.client.del(keys[0]);
+      let count = 0;
+      for (const key of keys) {
+        count += await this.client.del(key);
+      }
+      return count;
+    } catch (e) {
+      console.error(`Upstash DEL error:`, e instanceof Error ? e.message : e);
+      return 0;
     }
-    return count;
   }
 
   async exists(key: string): Promise<number> {
-    return this.client.exists(key);
+    try {
+      return await this.client.exists(key);
+    } catch (e) {
+      console.error(
+        `Upstash EXISTS error [${key}]:`,
+        e instanceof Error ? e.message : e,
+      );
+      return 0;
+    }
   }
 
   async ping(): Promise<string> {
-    return this.client.ping();
+    try {
+      return await this.client.ping();
+    } catch (e) {
+      console.error(`Upstash PING error:`, e instanceof Error ? e.message : e);
+      return "ERROR";
+    }
   }
 
   async scan(
     _cursor: string | number,
     ..._args: any[]
   ): Promise<[string, string[]]> {
-    return ["0", []];
+    try {
+      const result = await this.client.scan(_cursor, { count: 100 });
+      return [result[0], result[1]];
+    } catch (e) {
+      console.error(`Upstash SCAN error:`, e instanceof Error ? e.message : e);
+      return ["0", []];
+    }
   }
 
   async eval(_script: string, _numKeys: number, ..._args: any[]): Promise<any> {

@@ -1,7 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { REDIS_CLIENT } from '../redis/redis.constants';
-import type { RedisClient } from '../redis/redis.constants';
-import { PrismaService } from '../prisma/prisma.service';
+import { Inject, Injectable } from "@nestjs/common";
+import { REDIS_CLIENT } from "../redis/redis.constants";
+import type { RedisClient } from "../redis/redis.constants";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class HealthService {
@@ -12,17 +12,19 @@ export class HealthService {
 
   async check() {
     const dbStatus = await this.checkDatabase();
-    const redisStatus = await this.checkRedis();
+    const redisResult = await this.checkRedis();
 
-    const status = dbStatus === 'ok' && redisStatus === 'ok' ? 'ok' : 'degraded';
+    const status =
+      dbStatus === "ok" && redisResult.status === "ok" ? "ok" : "degraded";
 
     return {
       status,
-      service: 'api',
+      service: "api",
       timestamp: new Date().toISOString(),
       checks: {
         database: dbStatus,
-        redis: redisStatus,
+        redis: redisResult.status,
+        redisDetail: redisResult.detail,
       },
     };
   }
@@ -30,18 +32,26 @@ export class HealthService {
   private async checkDatabase(): Promise<string> {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-      return 'ok';
+      return "ok";
     } catch {
-      return 'error';
+      return "error";
     }
   }
 
-  private async checkRedis(): Promise<string> {
+  private async checkRedis(): Promise<{
+    status: string;
+    detail: string | null;
+  }> {
     try {
       const pong = await this.redis.ping();
-      return pong === 'PONG' ? 'ok' : 'error';
-    } catch {
-      return 'error';
+      return {
+        status: pong === "PONG" ? "ok" : "error",
+        detail: null,
+      };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("REDIS_CHECK_ERROR:", msg);
+      return { status: "error", detail: msg };
     }
   }
 }
