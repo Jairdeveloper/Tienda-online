@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Frontend Fase 4 (Pagos): flujo completo de pago mock con intent, confirmación y polling
+  - `web/types/payments.ts`: interfaces TypeScript para PaymentIntentRequest, PaymentIntentResponse, PaymentConfirmRequest, PaymentConfirmResponse
+  - `web/pages/Payment.tsx`: página de pago con creación de intent (POST /payments/:orderId/intent) y confirmación mock (POST /payments/:orderId/confirm), skeleton loading, manejo de errores y redirect post-pago
+  - `web/pages/PaymentResult.tsx`: pantalla de resultado con check verde (éxito) o X roja (fallo), botones "Ver mi pedido" y "Reintentar"
+  - `web/pages/OrderDetail.tsx`: botón "Pagar ahora" con navegación a `/orders/:id/pay` + polling de estado cada 3s (máx 30 intentos) con indicador "Verificando pago..."
+  - `web/routes/index.tsx`: nuevas rutas `/orders/:orderId/pay` y `/payment/result`
+  - Documentación de ejecución: `docs/frontend/035_FRONTEND_EXEC_FASE4_1_0_DRAFT.md`
+
 - Frontend Fase 3 (Checkout + Órdenes): flujo completo de checkout y gestión de pedidos
   - `web/types/orders.ts`: interfaces TypeScript para Order, OrderItem, PaymentInfo, CheckoutRequest, CheckoutResponse, PaginatedOrders
   - `web/components/orders/OrderStatusBadge.tsx`: badge de estado con mapeo de colores para 7 estados del pedido
@@ -47,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `package.json`: añadidas dependencias frontend (React, Vite, Tailwind, etc.) y scripts de build/dev
-- `docs/REGISTRO_IDS.md`: registrados IDs 031 (Fase 0), 032 (Fase 1), 033 (Fase 2), 034 (Fase 3)
+- `docs/REGISTRO_IDS.md`: registrados IDs 031 (Fase 0), 032 (Fase 1), 033 (Fase 2), 034 (Fase 3), 035 (Fase 4)
 - `.gitignore`: añadido `dist-frontend/`
 
 - `api/index.js`: monkey-patch para PrismaClient (`configOverride`) que fuerza `postinstall: false` y `ciName: undefined`, solucionando el error "Prisma has detected that this project was built on Vercel" en runtime serverless

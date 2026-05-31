@@ -92,6 +92,7 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 032 | `032_FRONTEND_EXEC_FASE1_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
 | 033 | `033_FRONTEND_EXEC_FASE2_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
 | 034 | `034_FRONTEND_EXEC_FASE3_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
+| 035 | `035_FRONTEND_EXEC_FASE4_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
 
 ---
 

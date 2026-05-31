@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../api/client";
@@ -7,6 +7,8 @@ import type { Order } from "../types/orders";
 import OrderStatusBadge from "../components/orders/OrderStatusBadge";
 
 const CANCELLABLE_STATUSES = ["created", "stock_reserved", "payment_pending"];
+const POLLING_INTERVAL = 3000;
+const MAX_POLLING_ATTEMPTS = 30;
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -15,11 +17,16 @@ export default function OrderDetail() {
   const queryClient = useQueryClient();
   const location = useLocation();
   const checkoutSuccess = location.state?.checkoutSuccess;
+  const paymentSuccess = location.state?.paymentSuccess;
+  const paymentError = location.state?.paymentError;
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelError, setCancelError] = useState("");
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const [successMessage, setSuccessMessage] = useState(
-    checkoutSuccess ? "¡Pedido creado exitosamente!" : "",
+    checkoutSuccess ? "¡Pedido creado exitosamente!" : paymentSuccess || "",
   );
 
   useEffect(() => {
@@ -32,6 +39,7 @@ export default function OrderDetail() {
     data: order,
     isLoading,
     isError,
+    refetch,
   } = useQuery<Order>({
     queryKey: ["order", id],
     queryFn: async () => {
@@ -40,6 +48,47 @@ export default function OrderDetail() {
     },
     enabled: isAuthenticated && !!id,
   });
+
+  const isPollingActive =
+    order?.status === "payment_pending" &&
+    pollingAttempts < MAX_POLLING_ATTEMPTS;
+
+  useEffect(() => {
+    if (!order || !isAuthenticated) return;
+
+    if (order.status !== "payment_pending") {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      setPollingAttempts(0);
+      return;
+    }
+
+    if (pollingRef.current) return;
+
+    pollingRef.current = setInterval(async () => {
+      setPollingAttempts((prev) => {
+        const next = prev + 1;
+        if (next >= MAX_POLLING_ATTEMPTS) {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
+        }
+        return next;
+      });
+      await refetch();
+    }, POLLING_INTERVAL);
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      setPollingAttempts(0);
+    };
+  }, [order?.status, isAuthenticated, order, refetch]);
 
   const cancelMutation = useMutation({
     mutationFn: async () => {
@@ -155,6 +204,36 @@ export default function OrderDetail() {
         </div>
       )}
 
+      {paymentError && (
+        <div
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm"
+          role="alert"
+        >
+          {paymentError}
+        </div>
+      )}
+
+      {isPollingActive && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2">
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500" />
+          </span>
+          Verificando pago...
+        </div>
+      )}
+
+      {pollingAttempts >= MAX_POLLING_ATTEMPTS &&
+        order?.status === "payment_pending" && (
+          <div
+            className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg mb-6 text-sm"
+            role="alert"
+          >
+            La verificación está tardando más de lo esperado. Puedes intentar
+            recargar la página.
+          </div>
+        )}
+
       <div className="bg-white shadow-md rounded-xl p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div>
@@ -263,7 +342,10 @@ export default function OrderDetail() {
 
       <div className="flex flex-wrap gap-3">
         {getPaymentPending() && (
-          <button className="bg-primary-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
+          <button
+            onClick={() => navigate(`/orders/${id}/pay`)}
+            className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
             Pagar ahora
           </button>
         )}
