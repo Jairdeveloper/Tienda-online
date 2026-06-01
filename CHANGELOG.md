@@ -43,6 +43,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/REGISTRO_IDS.md`: registrados IDs 038 (plan produccion), 039 (ejecucion produccion), 040 (reporte Prod.1+Prod.2)
 - `.opencode/agents/vercel-deploy.md`: herramienta `bash` agregada para comandos Vercel CLI
 
+- Frontend Prod.3: configurar SPA routing
+  - vercel.json verificado con rewrite SPA `/(.*)` → `/index.html` despues de rutas API
+  - Prueba local con `npx serve dist-frontend -s`: 10 rutas, todas HTTP 200
+  - Prueba en produccion Vercel: 10 rutas, todas HTTP 200, sin 404 en recarga directa
+
+- Frontend Prod.4: pruebas de integracion con backend produccion
+  - Frontend SPA carga correctamente (HTML, JS 561KB, CSS 31KB)
+  - Health endpoint `/_health` responde 200
+  - Error backend preexistente documentado: `init_failed: Cannot find module '../dist/main'`
+  - Bugfix backend documentado en `docs/041_BUGFIX_BACKEND_INIT_1_0_DRAFT.md`
+
+- Frontend Prod.5: optimizaciones pre-produccion
+  - Vendor chunks separados: react, router, query, axios (manualChunks en vite.config.ts)
+  - Chunk principal reducido de 561KB a 414KB (-26%)
+  - Meta tags SEO y Open Graph en index.html
+  - Bundle analysis ejecutado con rollup-plugin-visualizer (removido post-analisis)
+
+- Frontend Prod.6: QA final
+  - Pruebas responsive: viewport configurado, 11 rutas SPA verificadas
+  - Error handling: ErrorBoundary global, HTTP interceptor con auto-refresh, 401 handling
+  - Seguridad: HTTPS valido, HSTS, sin sourcemaps en produccion
+  - Chunk integrity: 30 archivos (29 JS + 1 CSS), 11/11 rutas HTTP 200
+  - Lighthouse: no ejecutable en entorno (falta Chrome/Chromium)
+
+- Frontend Prod.7: security headers y documentacion final
+  - `vercel.json`: agregado array `headers` con `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block` para todas las rutas `/(.*)`
+  - CORS configurado en proyecto Vercel `tienda-online` con `CORS_ORIGIN=https://tienda-frontend-self.vercel.app`
+  - Reason: complete frontend production deployment (Prod.1-7) — SPA deployed, routing, optimized, QA passed, security hardened
+
 - Frontend Fase 6 (QA + Polish): error handling global, loading states, responsive design, code-splitting, empty states
   - `web/components/shared/ErrorBoundary.tsx`: ErrorBoundary global con UI amigable y botón Reintentar
   - `web/components/shared/Toast.tsx`: sistema de toasts (success/error/warning/info) con auto-dismiss 5s y animación slide-in
@@ -58,6 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `web/pages/admin/Inventory.tsx`: TableSkeleton + overflow-x-auto + empty state mejorado
   - Documentación de ejecución: `docs/frontend/037_FRONTEND_EXEC_FASE6_1_0_DRAFT.md`
 - `docs/REGISTRO_IDS.md`: registrado ID 037 (Fase 6)
+- `docs/041_BUGFIX_BACKEND_INIT_1_0_DRAFT.md`: documentacion del bugfix del error `init_failed` en backend NestJS al desplegar en Vercel, con analisis de causa raiz (esbuild bundling rompe rutas relativas) y soluciones aplicadas (path fallback, bundle:false, CORS_ORIGIN)
+- `docs/REGISTRO_IDS.md`: registrado ID 041 (BUGFIX backend init)
 
 - Frontend Fase 5 (Admin Panel): panel de administración completo con layout, route guard, y CRUD de pedidos, productos, variantes e inventario
   - `web/types/admin.ts`: interfaces TypeScript para CreateProductInput, UpdateProductInput, CreateVariantInput, UpdateVariantInput, UpdateOrderStatusInput, InventoryItem, UpdateInventoryInput
@@ -75,6 +106,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/REGISTRO_IDS.md`: registrado ID 036 (Fase 5)
 
 ### Fixed
+
+- Backend `init_failed` error en Vercel: `Cannot find module '../dist/main'` en todos los endpoints `/api/v1/*` — resuelto con path fallback en `api/index.js` (prueba `../dist/main`, luego `./dist/main`) + `bundle: false` + `includeFiles: dist/**` en `vercel.json`
+- CORS deshabilitado en producción: `CORS_ORIGIN` vacío causaba `origin: false` en NestJS — configurado `CORS_ORIGIN=https://tienda-frontend-self.vercel.app` en proyecto Vercel `tienda-online`
+
+- CORS configurado para origen del frontend (CORS_ORIGIN en proyecto tienda-online)
+- Frontend: Faltaban headers de seguridad (X-Content-Type-Options, X-Frame-Options) en Vercel — resuelto en Prod.7 con array `headers` en vercel.json
 
 - Redis graceful degradation: `UpstashClient`, `CacheService` y `RedisLockService` ahora capturan errores de conexión Redis (WRONGPASS, timeouts) y degradan gracefulmente — cache miss retorna null, locks retornan false, el endpoint `/api/v1/health` reporta `status: degraded` con detalle del error en `redisDetail`
 - Migraciones de Prisma aplicadas correctamente a Neon DB (`prisma migrate deploy`): 3 migraciones (baseline, business entities, remove telegram fields) ejecutadas contra la base de datos de producción

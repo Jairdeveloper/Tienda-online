@@ -96,6 +96,11 @@ GitHub Actions workflow in `.github/workflows/ci.yml`:
 - Spins up PostgreSQL + Redis as service containers
 - `npm ci` → `prisma generate` → `prisma migrate deploy` → `npm run build` → `npm test` → `npm run test:e2e`
 
+## Production URLs
+
+- **Backend API**: `https://tienda-online-zped08s-projects.vercel.app` (prefix `/api/v1`)
+- **Frontend SPA**: `https://tienda-frontend-self.vercel.app`
+
 ## Package identity
 
 - **Scope**: `@tienda/api` (private, not published)

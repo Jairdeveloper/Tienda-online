@@ -99,6 +99,12 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 039 | `039_EXEC_FRONTEND_PRODUCCION_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-06-01 |
 | 040 | `040_FRONTEND_EXEC_PROD1_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-06-01 |
 
+## BUGFIX
+
+| ID  | Archivo                                | Área    | Tipo   | Estado | Creado     |
+| --- | -------------------------------------- | ------- | ------ | ------ | ---------- |
+| 041 | `041_BUGFIX_BACKEND_INIT_1_0_DRAFT.md` | backend | BUGFIX | ACTIVE | 2026-06-01 |
+
 ---
 
 ## IDs de Algoritmos (algoritmos/)

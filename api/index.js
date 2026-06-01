@@ -17,14 +17,22 @@ prismaModule.PrismaClient = new Proxy(OrigPrismaClient, {
   },
 });
 
+const path = require("path");
+
 let app;
 let initError;
 let mod;
 
 try {
   mod = require("../dist/main");
-} catch (err) {
-  initError = err;
+} catch (_) {
+  try {
+    mod = require("./dist/main");
+  } catch (err2) {
+    initError = new Error(
+      `Cannot find dist/main. Tried: ${path.join(__dirname, "..", "dist", "main")}, ${path.join(__dirname, "dist", "main")}`,
+    );
+  }
 }
 
 process.on("uncaughtException", (err) => {

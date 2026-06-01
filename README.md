@@ -45,23 +45,23 @@ Backend REST para comercio electrónico construido con **NestJS**, **Prisma** (P
 
 ## Módulos (17)
 
-| Módulo | Descripción |
-|--------|-------------|
-| Config | Validación de entorno con Joi |
-| Common | Logger JSON, Cache, Filtro de excepciones |
-| Prisma | PrismaService (PrismaClient extendido) |
-| Redis | RedisService, RedisLockService, cliente ioredis |
-| Auth | JWT + RBAC, guards, strategies, decorators |
-| Users | CRUD de perfil y direcciones |
-| Catalog | Catálogo de productos y categorías |
-| Cart | Carrito persistente por usuario/sesión |
-| Checkout | Creación de pedidos con idempotencia |
-| Orders | Gestión de pedidos, estados, cancelación |
-| Payments | Procesamiento de pagos con patrón provider |
-| Inventory | Control de stock por variante |
-| Admin | Operaciones administrativas CRUD |
-| Health | Health checks de DB y Redis |
-| Types | Tipos Express (requestId, user) |
+| Módulo    | Descripción                                     |
+| --------- | ----------------------------------------------- |
+| Config    | Validación de entorno con Joi                   |
+| Common    | Logger JSON, Cache, Filtro de excepciones       |
+| Prisma    | PrismaService (PrismaClient extendido)          |
+| Redis     | RedisService, RedisLockService, cliente ioredis |
+| Auth      | JWT + RBAC, guards, strategies, decorators      |
+| Users     | CRUD de perfil y direcciones                    |
+| Catalog   | Catálogo de productos y categorías              |
+| Cart      | Carrito persistente por usuario/sesión          |
+| Checkout  | Creación de pedidos con idempotencia            |
+| Orders    | Gestión de pedidos, estados, cancelación        |
+| Payments  | Procesamiento de pagos con patrón provider      |
+| Inventory | Control de stock por variante                   |
+| Admin     | Operaciones administrativas CRUD                |
+| Health    | Health checks de DB y Redis                     |
+| Types     | Tipos Express (requestId, user)                 |
 
 ## Patrones clave
 
@@ -130,21 +130,21 @@ npm run start:prod
 
 ## Comandos disponibles
 
-| Comando | Descripción |
-|---------|-------------|
-| `npm run build` | Compila TypeScript a JS en `dist/` |
-| `npm run start` | Inicia la app |
-| `npm run start:dev` | Inicia con hot-reload (watch mode) |
-| `npm run start:debug` | Inicia con debugger + watch |
-| `npm run start:prod` | Inicia desde `dist/main.js` |
-| `npm run test` | Ejecuta tests unitarios (con cobertura) |
-| `npm run test:watch` | Tests en modo watch |
-| `npm run test:e2e` | Tests end-to-end (requiere DB + Redis) |
-| `npm run db:generate` | Genera Prisma Client |
-| `npm run db:migrate:dev` | Crea nueva migración |
-| `npm run db:migrate:deploy` | Aplica migraciones existentes |
-| `npm run db:migrate:status` | Estado de migraciones |
-| `npm run db:seed` | Pobla DB con datos iniciales |
+| Comando                     | Descripción                             |
+| --------------------------- | --------------------------------------- |
+| `npm run build`             | Compila TypeScript a JS en `dist/`      |
+| `npm run start`             | Inicia la app                           |
+| `npm run start:dev`         | Inicia con hot-reload (watch mode)      |
+| `npm run start:debug`       | Inicia con debugger + watch             |
+| `npm run start:prod`        | Inicia desde `dist/main.js`             |
+| `npm run test`              | Ejecuta tests unitarios (con cobertura) |
+| `npm run test:watch`        | Tests en modo watch                     |
+| `npm run test:e2e`          | Tests end-to-end (requiere DB + Redis)  |
+| `npm run db:generate`       | Genera Prisma Client                    |
+| `npm run db:migrate:dev`    | Crea nueva migración                    |
+| `npm run db:migrate:deploy` | Aplica migraciones existentes           |
+| `npm run db:migrate:status` | Estado de migraciones                   |
+| `npm run db:seed`           | Pobla DB con datos iniciales            |
 
 ## Docker
 
@@ -232,9 +232,34 @@ El proyecto sigue una convención de documentación formal definida en `algoritm
 - **Frontmatter**: YAML con metadatos (id, area, type, module, version, status, tags, summary, keywords, changelog)
 - **IDs**: Registro central en `docs/REGISTRO_IDS.md`
 
+## Frontend SPA
+
+El frontend de la tienda es una SPA construida con **React + TypeScript + Vite + Tailwind CSS**, desplegada en Vercel como proyecto independiente.
+
+- **URL de producción**: [https://tienda-frontend-self.vercel.app](https://tienda-frontend-self.vercel.app)
+- **Repositorio**: integrado en este mismo monorepo (`web/`)
+- **API base**: `https://tienda-online-zped08s-projects.vercel.app/api/v1`
+- **SPA Routing**: configurado con rewrites en Vercel (`/(.*)` → `/index.html`)
+- **Code Splitting**: 29 JS chunks + 1 CSS, chunk principal 414KB
+- **Optimizaciones**: vendor chunks separados (react, router, query, axios), meta tags SEO/OG, HSTS, sin sourcemaps en producción
+
+### Build y deploy
+
+```sh
+# Construir frontend
+npm run build:frontend
+
+# Probar localmente
+npx serve dist-frontend -s
+
+# Deploy (requiere Vercel CLI y proyecto linkeado)
+vercel --prod
+```
+
 ## CI/CD
 
 GitHub Actions en `.github/workflows/ci.yml`:
+
 - Push/PR a `main` → PostgreSQL + Redis services → `npm ci` → `prisma generate` → `prisma migrate deploy` → `npm run build` → `npm test` → `npm run test:e2e`
 
 ## Licencia

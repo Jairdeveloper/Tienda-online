@@ -903,3 +903,4 @@ ejecutarse sin autorizacion explicita del usuario. Cuando el usuario
 indique que desea proceder, seguir las fases secuencialmente, marcando
 cada tarea como completada antes de pasar a la siguiente.
 
+

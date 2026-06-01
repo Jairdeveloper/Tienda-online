@@ -9,6 +9,16 @@ export default defineConfig({
   build: {
     outDir: "dist-frontend",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom"],
+          "vendor-router": ["react-router-dom"],
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-axios": ["axios"],
+        },
+      },
+    },
   },
   resolve: {
     alias: {
