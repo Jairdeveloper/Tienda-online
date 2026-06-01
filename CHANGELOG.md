@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Frontend Fase 5 (Admin Panel): panel de administración completo con layout, route guard, y CRUD de pedidos, productos, variantes e inventario
+  - `web/types/admin.ts`: interfaces TypeScript para CreateProductInput, UpdateProductInput, CreateVariantInput, UpdateVariantInput, UpdateOrderStatusInput, InventoryItem, UpdateInventoryInput
+  - `web/components/admin/AdminRoute.tsx`: route guard que verifica autenticación y rol admin, con spinner loading y mensaje de acceso denegado
+  - `web/components/admin/AdminLayout.tsx`: sidebar oscuro (bg-gray-900, w-64) con 4 enlaces, breadcrumb, toggle mobile
+  - `web/components/admin/VariantManager.tsx`: CRUD de variantes con modal inline para crear/editar, tabla con SKU/precio/atributos/acciones
+  - `web/pages/admin/Dashboard.tsx`: cards con estadísticas rápidas (total pedidos, productos, bajo stock)
+  - `web/pages/admin/Orders.tsx`: tabla paginada de pedidos con filtro por estado (pills) y navegación a detalle
+  - `web/pages/admin/OrderDetail.tsx`: detalle de orden con items, payments y formulario de cambio de estado (select + textarea)
+  - `web/pages/admin/Products.tsx`: tabla paginada de productos con búsqueda, botones nuevo/editar/eliminar con confirmación
+  - `web/pages/admin/ProductForm.tsx`: formulario crear/editar producto con categorías (checkboxes), atributos dinámicos, y VariantManager en edición
+  - `web/pages/admin/Inventory.tsx`: tabla paginada de inventario con toggle low-stock, filas destacadas en rojo, modal de edición inline
+  - `web/routes/index.tsx`: 7 nuevas rutas admin protegidas por AdminRoute con AdminLayout
+  - Documentación de ejecución: `docs/frontend/036_FRONTEND_EXEC_FASE5_1_0_DRAFT.md`
+- `docs/REGISTRO_IDS.md`: registrado ID 036 (Fase 5)
+
 ### Fixed
 
 - Redis graceful degradation: `UpstashClient`, `CacheService` y `RedisLockService` ahora capturan errores de conexión Redis (WRONGPASS, timeouts) y degradan gracefulmente — cache miss retorna null, locks retornan false, el endpoint `/api/v1/health` reporta `status: degraded` con detalle del error en `redisDetail`
