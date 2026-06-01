@@ -8,6 +8,7 @@ tools:
   websearch: true
   read: true
   write: true
+  bash: true
 ---
 
 # Vercel Deploy Expert Agent

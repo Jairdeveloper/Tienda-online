@@ -84,17 +84,20 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 
 ## Frontend
 
-| ID  | Archivo                                | Área     | Tipo | Estado | Creado     |
-| --- | -------------------------------------- | -------- | ---- | ------ | ---------- |
-| 021 | `021_API_FRONTEND_SPEC_1_0_DRAFT.md`   | frontend | API  | DRAFT  | 2026-05-30 |
-| 022 | `022_EXEC_FRONTEND_PLAN_1_0_DRAFT.md`  | frontend | EXEC | DRAFT  | 2026-05-30 |
-| 031 | `031_FRONTEND_EXEC_FASE0_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
-| 032 | `032_FRONTEND_EXEC_FASE1_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
-| 033 | `033_FRONTEND_EXEC_FASE2_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
-| 034 | `034_FRONTEND_EXEC_FASE3_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
-| 035 | `035_FRONTEND_EXEC_FASE4_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-05-31 |
-| 036 | `036_FRONTEND_EXEC_FASE5_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-06-01 |
-| 037 | `037_FRONTEND_EXEC_FASE6_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-06-01 |
+| ID  | Archivo                                     | Área     | Tipo | Estado | Creado     |
+| --- | ------------------------------------------- | -------- | ---- | ------ | ---------- |
+| 021 | `021_API_FRONTEND_SPEC_1_0_DRAFT.md`        | frontend | API  | DRAFT  | 2026-05-30 |
+| 022 | `022_EXEC_FRONTEND_PLAN_1_0_DRAFT.md`       | frontend | EXEC | DRAFT  | 2026-05-30 |
+| 031 | `031_FRONTEND_EXEC_FASE0_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-05-31 |
+| 032 | `032_FRONTEND_EXEC_FASE1_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-05-31 |
+| 033 | `033_FRONTEND_EXEC_FASE2_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-05-31 |
+| 034 | `034_FRONTEND_EXEC_FASE3_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-05-31 |
+| 035 | `035_FRONTEND_EXEC_FASE4_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-05-31 |
+| 036 | `036_FRONTEND_EXEC_FASE5_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-06-01 |
+| 037 | `037_FRONTEND_EXEC_FASE6_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-06-01 |
+| 038 | `038_FRONTEND_PLAN_PRODUCCION_1_0_DRAFT.md` | frontend | PLAN | DRAFT  | 2026-06-01 |
+| 039 | `039_EXEC_FRONTEND_PRODUCCION_1_0_DRAFT.md` | frontend | EXEC | DRAFT  | 2026-06-01 |
+| 040 | `040_FRONTEND_EXEC_PROD1_1_0_DRAFT.md`      | frontend | EXEC | DRAFT  | 2026-06-01 |
 
 ---
 

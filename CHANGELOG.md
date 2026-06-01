@@ -11,6 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Frontend Prod.1: decision de plataforma y proyecto Vercel
+  - Decision estrategica: Opcion B - Vercel (proyecto separado) para el frontend SPA
+  - Proyecto `tienda-frontend` creado en Vercel bajo el equipo `zped08s-projects`
+  - Analisis de configuracion actual (vercel.json, package.json, vite.config.ts, client.ts)
+  - Investigacion de mejores practicas Vercel para SPA Vite (7 fuentes oficiales)
+  - Riesgos identificados: CORS, conflicto vercel.json, bundle, SPA 404, Node version, rate limiting
+  - Plan estrategico: `docs/frontend/038_FRONTEND_PLAN_PRODUCCION_1_0_DRAFT.md`
+  - Plan de ejecucion: `docs/frontend/039_EXEC_FRONTEND_PRODUCCION_1_0_DRAFT.md`
+  - Reporte de ejecucion: `docs/frontend/040_FRONTEND_EXEC_PROD1_1_0_DRAFT.md` (seccion Prod.1, v1.0)
+
+- Frontend Prod.2: configurar build y deploy en Vercel
+  - `package.json`: script `build:frontend` verificado (vite build, 27 chunks generados)
+  - `dist-frontend/` generado con 27 JS chunks + assets de produccion
+  - Proyecto `tienda-frontend` linkeado via `vercel link --project tienda-frontend` (projectId: prj_oNCkxw9V7POOAfFyI9CCBO4Qts5Q)
+  - `VITE_API_BASE_URL` configurada en Vercel para produccion (`https://tienda-online-zped08s-projects.vercel.app/api/v1`)
+  - Frontend desplegado en `https://tienda-frontend-self.vercel.app` con SPA routing funcional
+  - SSO protection deshabilitada para acceso publico
+  - `vercel.json` raiz modificado localmente: catch-all `/api/(.*)` + SPA rewrite `/(.*)` → `/index.html`
+  - Documentacion de ejecucion: `docs/frontend/040_FRONTEND_EXEC_PROD1_1_0_DRAFT.md` extendido con seccion Prod.2 (v1.2)
+- `docs/REGISTRO_IDS.md`: registrados IDs 038 (plan produccion), 039 (ejecucion produccion), 040 (reporte Prod.1+Prod.2)
+- `.opencode/agents/vercel-deploy.md`: herramienta `bash` agregada para comandos Vercel CLI
+
 - Frontend Fase 6 (QA + Polish): error handling global, loading states, responsive design, code-splitting, empty states
   - `web/components/shared/ErrorBoundary.tsx`: ErrorBoundary global con UI amigable y botón Reintentar
   - `web/components/shared/Toast.tsx`: sistema de toasts (success/error/warning/info) con auto-dismiss 5s y animación slide-in
