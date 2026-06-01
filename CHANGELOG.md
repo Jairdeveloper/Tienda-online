@@ -122,6 +122,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `vercel.json`: renamed deprecated Vercel config properties — `routes` → `rewrites`, `src` → `source`, `dest` → `destination` (Vercel CLI v4 deprecation warnings with `vercel build`); no functional change, same regex SPA routing
 
+- `vercel.json`: restore `builds` array with `bundle: false` and `includeFiles: dist/**` for `api/index.js`, `api/diagnostic.js`, and `api/health.js` — fixes backend API routes (`/api/*`) failing at deploy time with `init_failed` after commit `d7e29bf` removed the build configuration, breaking all backend Lambda deployments
+
 ### Changed
 
 - `vercel.json`: las variables de entorno `REDIS_URL` y `UPSTASH_REDIS_TOKEN` actualizadas con los valores correctos de Upstash (REST API)
