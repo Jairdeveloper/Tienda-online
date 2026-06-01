@@ -120,9 +120,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redis graceful degradation: `UpstashClient`, `CacheService` y `RedisLockService` ahora capturan errores de conexión Redis (WRONGPASS, timeouts) y degradan gracefulmente — cache miss retorna null, locks retornan false, el endpoint `/api/v1/health` reporta `status: degraded` con detalle del error en `redisDetail`
 - Migraciones de Prisma aplicadas correctamente a Neon DB (`prisma migrate deploy`): 3 migraciones (baseline, business entities, remove telegram fields) ejecutadas contra la base de datos de producción
 
+- `vercel.json`: renamed deprecated Vercel config properties — `routes` → `rewrites`, `src` → `source`, `dest` → `destination` (Vercel CLI v4 deprecation warnings with `vercel build`); no functional change, same regex SPA routing
+
 ### Changed
 
 - `vercel.json`: las variables de entorno `REDIS_URL` y `UPSTASH_REDIS_TOKEN` actualizadas con los valores correctos de Upstash (REST API)
+
+- Agent documentation relocated from `.opencode/agents/` to `docs/ai/`: `028_PRM_BUILD_AGENTS_1_0_DRAFT.md` and `029_EXEC_BUILD_AGENTS_1_0_DRAFT.md` moved to align documentation under standard `docs/` directory
 
 ### Added
 
