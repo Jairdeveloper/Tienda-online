@@ -124,6 +124,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `vercel.json`: restore `builds` array with `bundle: false` and `includeFiles: dist/**` for `api/index.js`, `api/diagnostic.js`, and `api/health.js` — fixes backend API routes (`/api/*`) failing at deploy time with `init_failed` after commit `d7e29bf` removed the build configuration, breaking all backend Lambda deployments
 
+- `vercel.json`: unified build command (`npm run build:frontend && npx prisma generate && npm run build`) that works for both Vercel projects — previously the shared `vercel.json` with conflicting `builds`/`buildCommand`/`installCommand` caused the frontend project to deploy backend Lambdas without its SPA static files, returning 404 on all routes
+
 ### Changed
 
 - `vercel.json`: las variables de entorno `REDIS_URL` y `UPSTASH_REDIS_TOKEN` actualizadas con los valores correctos de Upstash (REST API)

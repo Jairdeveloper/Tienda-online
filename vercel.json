@@ -1,6 +1,6 @@
 {
   "installCommand": "npm ci --include=dev",
-  "buildCommand": "npx prisma migrate deploy --schema=prisma/schema.prisma && npx prisma generate --schema=prisma/schema.prisma && echo 'PRISMA_GENERATE_OK' && npm run build",
+  "buildCommand": "npm run build:frontend && npx prisma generate --schema=prisma/schema.prisma && npm run build",
   "outputDirectory": "dist-frontend",
   "builds": [
     {
