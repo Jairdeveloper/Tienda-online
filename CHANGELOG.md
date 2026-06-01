@@ -69,8 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Frontend Prod.7: security headers y documentacion final
   - `vercel.json`: agregado array `headers` con `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block` para todas las rutas `/(.*)`
-  - CORS configurado en proyecto Vercel `tienda-online` con `CORS_ORIGIN=https://tienda-frontend-self.vercel.app`
-  - Reason: complete frontend production deployment (Prod.1-7) — SPA deployed, routing, optimized, QA passed, security hardened
+- CORS configurado en proyecto Vercel `tienda-online` con `CORS_ORIGIN=https://tienda-frontend-self.vercel.app`
+- Backend: corregido error `init_failed` en nuevo deploy — `bundle: false` rompía la inclusión de `dist/main` en el lambda de Vercel, revertido a `includeFiles: dist/**` solamente
+- Reason: complete frontend production deployment (Prod.1-7) — SPA deployed, routing, optimized, QA passed, security hardened
 
 - Frontend Fase 6 (QA + Polish): error handling global, loading states, responsive design, code-splitting, empty states
   - `web/components/shared/ErrorBoundary.tsx`: ErrorBoundary global con UI amigable y botón Reintentar
@@ -107,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Backend `init_failed` error en Vercel: `Cannot find module '../dist/main'` en todos los endpoints `/api/v1/*` — resuelto con path fallback en `api/index.js` (prueba `../dist/main`, luego `./dist/main`) + `bundle: false` + `includeFiles: dist/**` en `vercel.json`
+- Backend `init_failed` error en Vercel: `Cannot find module '../dist/main'` en todos los endpoints `/api/v1/*` — resuelto con path fallback en `api/index.js` (prueba `../dist/main`, luego `./dist/main`) + `includeFiles: dist/**` en `vercel.json`
 - CORS deshabilitado en producción: `CORS_ORIGIN` vacío causaba `origin: false` en NestJS — configurado `CORS_ORIGIN=https://tienda-frontend-self.vercel.app` en proyecto Vercel `tienda-online`
 
 - CORS configurado para origen del frontend (CORS_ORIGIN en proyecto tienda-online)
