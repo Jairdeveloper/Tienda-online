@@ -1,38 +1,10 @@
 {
-  "installCommand": "npm ci --include=dev",
-  "buildCommand": "npx prisma migrate deploy --schema=prisma/schema.prisma && npx prisma generate --schema=prisma/schema.prisma && echo 'PRISMA_GENERATE_OK' && npm run build",
-  "builds": [
-    {
-      "src": "api/diagnostic.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/health.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": "dist/**"
-      }
-    }
-  ],
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build:frontend",
+  "outputDirectory": "dist-frontend",
   "routes": [
     {
-      "src": "/_diag",
-      "dest": "api/diagnostic.js"
-    },
-    {
-      "src": "/_health",
-      "dest": "api/health.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.js"
-    },
-    {
-      "src": "/(.*)",
+      "src": "^/((?!.*\\.).*)$",
       "dest": "/index.html"
     }
   ],

@@ -67,11 +67,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Chunk integrity: 30 archivos (29 JS + 1 CSS), 11/11 rutas HTTP 200
   - Lighthouse: no ejecutable en entorno (falta Chrome/Chromium)
 
-- Frontend Prod.7: security headers y documentacion final
+- Frontend Prod.7: deploy produccion frontend (vercel.json corregido para frontend SPA)
+  - `vercel.json`: reescrito para el proyecto `tienda-frontend` (Vite SPA) — `buildCommand` cambiado de `npm run build` (NestJS) a `npm run build:frontend` (Vite), `outputDirectory: dist-frontend`
   - `vercel.json`: agregado array `headers` con `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block` para todas las rutas `/(.*)`
-- CORS configurado en proyecto Vercel `tienda-online` con `CORS_ORIGIN=https://tienda-frontend-self.vercel.app`
-- Backend: corregido error `init_failed` en nuevo deploy — `bundle: false` rompía la inclusión de `dist/main` en el lambda de Vercel, revertido a `includeFiles: dist/**` solamente
-- Reason: complete frontend production deployment (Prod.1-7) — SPA deployed, routing, optimized, QA passed, security hardened
+  - `vercel.json`: SPA routing con regex `^/((?!.*\\.).*)$` → `/index.html` que excluye archivos estáticos (assets con extensión)
+  - CORS configurado en proyecto Vercel `tienda-online` con `CORS_ORIGIN=https://tienda-frontend-self.vercel.app`
+  - Backend: corregido error `init_failed` en nuevos deploys — revertido `bundle: false` que rompía la inclusión de `dist/main` en el lambda
+  - Backend: alias de produccion restaurado al deploy funcional (`93ajfe4yj`) via `vercel alias`
+  - Frontend verificado: 8 rutas SPA HTTP 200, assets estaticos (CSS/JS) servidos correctamente
 
 - Frontend Fase 6 (QA + Polish): error handling global, loading states, responsive design, code-splitting, empty states
   - `web/components/shared/ErrorBoundary.tsx`: ErrorBoundary global con UI amigable y botón Reintentar
