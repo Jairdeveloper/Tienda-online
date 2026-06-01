@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { showToast } from "../utils/toast";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
 
@@ -72,6 +73,14 @@ client.interceptors.response.use(
 
     // Only attempt refresh on 401 and if not already retrying
     if (error.response?.status !== 401 || originalRequest._retry) {
+      if (!error.response) {
+        showToast("Error de conexión. Verifica tu internet.", "error");
+      } else if (error.response.status >= 500) {
+        showToast("Error del servidor. Intenta nuevamente.", "error");
+      } else if (error.response.status !== 401) {
+        const data = error.response.data as { message?: string };
+        showToast(data?.message || "Error inesperado", "error");
+      }
       return Promise.reject(error);
     }
 

@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Frontend Fase 6 (QA + Polish): error handling global, loading states, responsive design, code-splitting, empty states
+  - `web/components/shared/ErrorBoundary.tsx`: ErrorBoundary global con UI amigable y botón Reintentar
+  - `web/components/shared/Toast.tsx`: sistema de toasts (success/error/warning/info) con auto-dismiss 5s y animación slide-in
+  - `web/components/shared/Skeleton.tsx`: componente skeleton reutilizable con 5 variantes (text, card, table-row, image, circle)
+  - `web/components/shared/TableSkeleton.tsx`: esqueleto para tablas con filas/columnas configurables
+  - `web/utils/toast.ts`: emisor de toasts standalone para uso desde client.ts sin dependencia React
+  - `web/api/client.ts`: interceptor HTTP que muestra toasts para errores 4xx (mensaje del servidor), 5xx ("Error del servidor") y network ("Error de conexión")
+  - `web/App.tsx`: envuelto con ErrorBoundary + ToastProvider
+  - `web/routes/index.tsx`: code-splitting con React.lazy + Suspense en todas las rutas (25 chunks separados)
+  - `web/index.css`: animación slide-in para toasts
+  - `web/pages/admin/Orders.tsx`: TableSkeleton + overflow-x-auto + empty state mejorado
+  - `web/pages/admin/Products.tsx`: TableSkeleton + overflow-x-auto + empty state mejorado
+  - `web/pages/admin/Inventory.tsx`: TableSkeleton + overflow-x-auto + empty state mejorado
+  - Documentación de ejecución: `docs/frontend/037_FRONTEND_EXEC_FASE6_1_0_DRAFT.md`
+- `docs/REGISTRO_IDS.md`: registrado ID 037 (Fase 6)
+
 - Frontend Fase 5 (Admin Panel): panel de administración completo con layout, route guard, y CRUD de pedidos, productos, variantes e inventario
   - `web/types/admin.ts`: interfaces TypeScript para CreateProductInput, UpdateProductInput, CreateVariantInput, UpdateVariantInput, UpdateOrderStatusInput, InventoryItem, UpdateInventoryInput
   - `web/components/admin/AdminRoute.tsx`: route guard que verifica autenticación y rol admin, con spinner loading y mensaje de acceso denegado

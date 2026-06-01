@@ -4,6 +4,7 @@ import client from "../../api/client";
 import type { PaginatedResponse } from "../../types/catalog";
 import type { InventoryItem, UpdateInventoryInput } from "../../types/admin";
 import Pagination from "../../components/catalog/Pagination";
+import TableSkeleton from "../../components/shared/TableSkeleton";
 
 export default function AdminInventory() {
   const queryClient = useQueryClient();
@@ -75,84 +76,107 @@ export default function AdminInventory() {
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left py-3 px-4 font-medium text-gray-500">
-                Producto
-              </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500">
-                SKU Variante
-              </th>
-              <th className="text-right py-3 px-4 font-medium text-gray-500">
-                Cantidad
-              </th>
-              <th className="text-right py-3 px-4 font-medium text-gray-500">
-                Reservado
-              </th>
-              <th className="text-right py-3 px-4 font-medium text-gray-500">
-                Disponible
-              </th>
-              <th className="text-right py-3 px-4 font-medium text-gray-500">
-                Stock Seguridad
-              </th>
-              <th className="text-right py-3 px-4 font-medium text-gray-500">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-gray-400">
-                  Cargando...
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  Producto
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  SKU Variante
+                </th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500">
+                  Cantidad
+                </th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500">
+                  Reservado
+                </th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500">
+                  Disponible
+                </th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500">
+                  Stock Seguridad
+                </th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500">
+                  Acciones
+                </th>
               </tr>
-            )}
-            {data?.items.map((item) => (
-              <tr
-                key={item.variantId}
-                className={`border-b border-gray-100 hover:bg-gray-50 ${
-                  item.available < item.safetyStock ? "bg-red-50" : ""
-                }`}
-              >
-                <td className="py-3 px-4 text-gray-900 font-medium">
-                  {item.variant.product.name}
-                </td>
-                <td className="py-3 px-4 font-mono text-xs text-gray-500">
-                  {item.variant.sku}
-                </td>
-                <td className="py-3 px-4 text-right text-gray-900">
-                  {item.quantity}
-                </td>
-                <td className="py-3 px-4 text-right text-gray-500">
-                  {item.reserved}
-                </td>
-                <td className="py-3 px-4 text-right font-semibold text-gray-900">
-                  {item.available}
-                </td>
-                <td className="py-3 px-4 text-right text-gray-500">
-                  {item.safetyStock}
-                </td>
-                <td className="py-3 px-4 text-right">
-                  <button
-                    onClick={() => openEdit(item)}
-                    className="text-primary-600 hover:text-primary-800 text-xs font-medium"
-                  >
-                    Editar
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {data && data.items.length === 0 && (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-gray-400">
-                  Sin inventario
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {isLoading && (
+                <tr>
+                  <td colSpan={7}>
+                    <TableSkeleton rows={5} columns={7} />
+                  </td>
+                </tr>
+              )}
+              {data?.items.map((item) => (
+                <tr
+                  key={item.variantId}
+                  className={`border-b border-gray-100 hover:bg-gray-50 ${
+                    item.available < item.safetyStock ? "bg-red-50" : ""
+                  }`}
+                >
+                  <td className="py-3 px-4 text-gray-900 font-medium">
+                    {item.variant.product.name}
+                  </td>
+                  <td className="py-3 px-4 font-mono text-xs text-gray-500">
+                    {item.variant.sku}
+                  </td>
+                  <td className="py-3 px-4 text-right text-gray-900">
+                    {item.quantity}
+                  </td>
+                  <td className="py-3 px-4 text-right text-gray-500">
+                    {item.reserved}
+                  </td>
+                  <td className="py-3 px-4 text-right font-semibold text-gray-900">
+                    {item.available}
+                  </td>
+                  <td className="py-3 px-4 text-right text-gray-500">
+                    {item.safetyStock}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <button
+                      onClick={() => openEdit(item)}
+                      className="text-primary-600 hover:text-primary-800 text-xs font-medium"
+                    >
+                      Editar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {data && data.items.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-gray-400">
+                    <svg
+                      className="w-12 h-12 mx-auto mb-3 text-gray-300"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                      />
+                    </svg>
+                    <p className="text-gray-500 font-medium mb-1">
+                      No se encontraron resultados
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {lowStockOnly
+                        ? "No hay variantes con bajo stock."
+                        : "No hay inventario registrado."}
+                    </p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {data && (
