@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Chatbot B2B support foundation and workflow-agent bridge documentation
+  - `docs/ai/bot/002_CHATBOT_SPEC_TIENDA_ONLINE_ACTIVE.md`: adds the B2B tienda online chatbot specification with backend/frontend context, roles, permissions, API contract, implementation plan and execution plan
+  - `docs/ai/bot/003_CHATBOT_FLOW_TIENDA_ONLINE_ACTIVE.md`: adds ASCII flow diagrams for message processing, admin confirmation, context sources and terminal states
+  - `docs/ai/bot/004_CHATBOT_ALGORITHM_TIENDA_ONLINE_ACTIVE.md`: adds the technical pseudocode algorithm using data, information, variables, constants, operators and expressions
+  - `bot/tienda-online-support-bot/`: adds a Python chatbot scaffold with session state, auth resolution, text processing, intent classification, policy checks, local knowledge, tool simulation, CLI entrypoint and local virtualenv documentation
+  - `docs/ai/bot/005_CHATBOT_IMPLEMENTATION_ACTIONS_1_0_ACTIVE.md`: documents implementation actions, validation commands and known environment notes for the Python bot scaffold
+  - `docs/ai/001_CHATBOT_SPEC_ELIZA_v1.0_ACTIVE.md` and `docs/ai/ALGORITMO_ELIZA.md`: add ELIZA reference materials used as chatbot specification precedent
+  - `workflow/031_DEV_SPEC_WORKFLOW_BOT_AGENT_1_0_DRAFT.md`: adds the workflow-bot-agent specification to connect `workflow.sh` with the Python bot through file-based orchestration
+  - Reason: establishes the initial free/local chatbot support architecture and a path for the workflow script to interact with the bot on behalf of users
+
 - Frontend Prod.1: decision de plataforma y proyecto Vercel
   - Decision estrategica: Opcion B - Vercel (proyecto separado) para el frontend SPA
   - Proyecto `tienda-frontend` creado en Vercel bajo el equipo `zped08s-projects`
