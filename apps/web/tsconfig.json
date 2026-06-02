@@ -14,10 +14,10 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["web/*"]
+      "@/*": ["src/*"]
     },
     "types": ["vite/client"]
   },
-  "include": ["web/**/*"],
-  "exclude": ["node_modules", "dist", "dist-frontend"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

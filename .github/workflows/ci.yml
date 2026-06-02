@@ -44,19 +44,22 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
+      - run: cd apps/api && npm ci
 
-      - run: npx prisma generate
+      - name: Install frontend deps
+        run: cd apps/web && npm ci
 
-      - run: npx prisma migrate deploy
+      - run: cd apps/api && npx prisma generate
+
+      - run: cd apps/api && npx prisma migrate deploy
         env:
           DATABASE_URL: postgresql://tienda:tienda_dev@localhost:5432/tienda_online?schema=public
 
-      - run: npm run build
+      - run: cd apps/api && npm run build
 
-      - run: npm test
+      - run: cd apps/api && npm test
 
-      - run: npm run test:e2e
+      - run: cd apps/api && npm run test:e2e
         env:
           DATABASE_URL: postgresql://tienda:tienda_dev@localhost:5432/tienda_online?schema=public
           REDIS_URL: redis://localhost:6379

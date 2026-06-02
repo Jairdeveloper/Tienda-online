@@ -27,6 +27,9 @@ LOCK_FILE="$WORKFLOW_DIR/lock"
 LOG_FILE="$WORKFLOW_DIR/workflow.log"
 PID_FILE="$WORKFLOW_DIR/listen.pid"
 CHECKPOINT_FILE="$WORKFLOW_DIR/checkpoint"
+NAMING_CONFIG_FILE="$WORKFLOW_DIR/naming.cfg"
+TRAINING_DIR="$WORKFLOW_DIR/training"
+TRAINING_EXAMPLES_FILE="$TRAINING_DIR/examples.jsonl"
 
 # --- Flags de comportamiento (via entorno) ---
 DRY_RUN="${DRY_RUN:-false}"
@@ -35,8 +38,13 @@ AUTO_APPROVE="${AUTO_APPROVE:-false}"
 
 # --- Inicialización ---
 init() {
-    mkdir -p "$INBOX_DIR" "$OUTBOX_DIR"
-    touch "$STATE_FILE" "$CYCLE_FILE" "$LOG_FILE"
+    mkdir -p "$INBOX_DIR" "$OUTBOX_DIR" "$TRAINING_DIR"
+    touch "$STATE_FILE" "$CYCLE_FILE" "$LOG_FILE" "$TRAINING_EXAMPLES_FILE"
+    if [ ! -f "$NAMING_CONFIG_FILE" ]; then
+cat > "$NAMING_CONFIG_FILE" <<-CFG
+naming_pattern={type}_{label}_v1_0_{state}.md
+CFG
+    fi
 }
 
 log() {
@@ -73,6 +81,217 @@ lock() {
     trap 'rm -f "$LOCK_FILE"' EXIT
 }
 
+sanitize_slug() {
+    echo "$1" | tr '[:lower:]' '[:upper:]' | sed 's/[^A-Z0-9]/_/g; s/_\+/_/g; s/^_//; s/_$//'
+}
+
+get_naming_pattern() {
+    grep '^naming_pattern=' "$NAMING_CONFIG_FILE" 2>/dev/null | cut -d= -f2- || echo '{type}_{label}_v1_0_{state}.md'
+}
+
+make_filename() {
+    type="$1"
+    label="$2"
+    version="${3:-1_0}"
+    state="${4:-DRAFT}"
+    module="${5:-}"
+    pattern=$(get_naming_pattern)
+    if [ -z "$label" ]; then
+        label="CICLO_$(get_cycle)"
+    fi
+    slug=$(sanitize_slug "$label")
+    if [ -z "$module" ]; then
+        module="CORE"
+    fi
+    filename=$(printf '%s' "$pattern" | sed \
+        -e "s/{type}/$type/g" \
+        -e "s/{label}/$slug/g" \
+        -e "s/{version}/$version/g" \
+        -e "s/{state}/$state/g" \
+        -e "s/{module}/$module/g")
+    echo "$filename"
+}
+
+set_naming_pattern() {
+    pattern="$1"
+    if [ -z "$pattern" ]; then
+        log "ERROR: patrón de nomenclatura vacío"
+        return 1
+    fi
+    mkdir -p "$(dirname "$NAMING_CONFIG_FILE")"
+    grep -v '^naming_pattern=' "$NAMING_CONFIG_FILE" 2>/dev/null > "$NAMING_CONFIG_FILE.tmp" || true
+    printf 'naming_pattern=%s\n' "$pattern" >> "$NAMING_CONFIG_FILE.tmp"
+    mv "$NAMING_CONFIG_FILE.tmp" "$NAMING_CONFIG_FILE"
+    log "Patrón de nomenclatura entrenado: $pattern"
+}
+
+# --- train_example: registra un ejemplo de entrenamiento ---
+train_example() {
+    example_file="$1"
+    result="$2"
+
+    if [ -z "$example_file" ]; then
+        echo "ERROR: Falta el archivo de ejemplo"
+        echo "Uso: $0 train example <archivo> [resultado]"
+        return 1
+    fi
+
+    if [ ! -f "$example_file" ]; then
+        echo "ERROR: El archivo '$example_file' no existe"
+        return 1
+    fi
+
+    # Generar un ID único para el ejemplo
+    example_id="example_$(date +%s)_$(basename "$example_file" | sed 's/\.[^.]*$//' | tr '[:upper:]' '[:lower:]')"
+
+    # Leer contenido del archivo de ejemplo
+    example_content=$(cat "$example_file")
+
+    # Construir entrada JSON enriquecida (usando python3 para JSON válido)
+    # Escribimos un script temporal para evitar problemas de escaping
+    py_script="/tmp/train_example_$$.py"
+    cat > "$py_script" <<-PYEOF
+	import json, sys, os
+	example_id = os.environ.get('EX_ID', '')
+	example_file = os.environ.get('EX_FILE', '')
+	ts = os.environ.get('EX_TS', '')
+	result = os.environ.get('EX_RESULT', '')
+	training_file = os.environ.get('EX_TRAINING', '')
+
+	entry = {
+	    'id': example_id,
+	    'timestamp': ts,
+	    'source': example_file,
+	    'type': 'example',
+	    'result': result
+	}
+	with open(example_file) as f:
+	    raw = f.read()
+	try:
+	    entry['content'] = json.loads(raw)
+	except:
+	    entry['content'] = raw
+	with open(training_file, 'a') as f:
+	    f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+	PYEOF
+    EX_ID="$example_id" EX_FILE="$example_file" EX_TS="$(date -Iseconds)" \
+        EX_RESULT="$result" EX_TRAINING="$TRAINING_EXAMPLES_FILE" \
+        python3 "$py_script"
+    rm -f "$py_script"
+
+    echo "✅ Ejemplo registrado: $example_id"
+    echo "   Archivo fuente: $example_file"
+    echo "   Total ejemplos: $(wc -l < "$TRAINING_EXAMPLES_FILE")"
+
+    log "Ejemplo entrenado: $example_id de $example_file"
+}
+
+# --- train_list: lista ejemplos registrados ---
+train_list() {
+    if [ ! -f "$TRAINING_EXAMPLES_FILE" ] || [ ! -s "$TRAINING_EXAMPLES_FILE" ]; then
+        echo "No hay ejemplos registrados."
+        return 0
+    fi
+
+    echo "=== Ejemplos de Entrenamiento ==="
+    echo ""
+    printf "%-30s %-25s %-12s %s\n" "ID" "Timestamp" "Tipo" "Fuente"
+    printf "%-30s %-25s %-12s %s\n" "---" "---------" "----" "------"
+
+    python3 -c "
+import json, sys
+with open('$TRAINING_EXAMPLES_FILE') as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+            id = obj.get('id', '?')[:28]
+            ts = obj.get('timestamp', '?')[:23]
+            t = obj.get('type', '?')[:10]
+            src = obj.get('source', '?')[:50]
+            print(f'{id:<30} {ts:<25} {t:<12} {src}')
+        except:
+            pass
+" 2>&1
+
+    echo ""
+    echo "Total: $(wc -l < "$TRAINING_EXAMPLES_FILE") ejemplos"
+}
+
+# --- train_show: muestra un ejemplo por ID ---
+train_show() {
+    search="$1"
+    if [ -z "$search" ]; then
+        echo "Uso: $0 train show <id>"
+        echo "Usa '$0 train list' para ver los IDs disponibles"
+        return 1
+    fi
+
+    if [ ! -f "$TRAINING_EXAMPLES_FILE" ]; then
+        echo "No hay ejemplos registrados."
+        return 1
+    fi
+
+    python3 -c "
+import json, sys
+search = '$search'.lower()
+found = False
+with open('$TRAINING_EXAMPLES_FILE') as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+            obj_id = obj.get('id', '')
+            if search in obj_id.lower() or search == obj_id:
+                print('=== Ejemplo:', obj_id, '===')
+                print(json.dumps(obj, indent=2, ensure_ascii=False))
+                found = True
+                break
+        except:
+            pass
+if not found:
+    print('No se encontró ejemplo con ID que contenga \"$search\"')
+    sys.exit(1)
+" 2>&1
+}
+
+# --- train: modo de entrenamiento ---
+train() {
+    init
+    case "$1" in
+        naming)
+            shift
+            pattern="$*"
+            if [ -z "$pattern" ]; then
+                echo "Uso: $0 train naming '<patrón>'"
+                exit 1
+            fi
+            set_naming_pattern "$pattern"
+            echo "{\"timestamp\":\"$(date -Iseconds)\",\"type\":\"naming\",\"pattern\":\"$pattern\"}" >> "$TRAINING_EXAMPLES_FILE"
+            ;;
+        example)
+            shift
+            train_example "$@"
+            ;;
+        list)
+            train_list
+            ;;
+        show)
+            shift
+            train_show "$@"
+            ;;
+        *)
+            echo "Uso: $0 train naming '<patrón>' | $0 train example <archivo> [resultado]"
+            echo "       $0 train list | $0 train show <id>"
+            exit 1
+            ;;
+    esac
+}
+
 # --- Paso 1-2: Solicitud y Entrega de Propuesta ---
 propose() {
     lock
@@ -105,7 +324,8 @@ propose() {
 	log "Instrucción escrita: $inst_file"
 
     # Generar propuesta (con contexto dinámico si existe)
-    prop_file="$OUTBOX_DIR/cycle_${cycle}_PROPUESTA_v1_0_DRAFT.md"
+    label="CICLO_${cycle}"
+    prop_file="$OUTBOX_DIR/$(make_filename PROPUESTA "$label" "1_0" "DRAFT")"
     context_file="$WORKFLOW_DIR/context.md"
     if [ -f "$context_file" ]; then
         context_block=$(head -c 1000 "$context_file")
@@ -217,7 +437,8 @@ plan() {
     fi
 
     cycle=$(get_cycle)
-    plan_file="$OUTBOX_DIR/cycle_${cycle}_PLAN_v1_0_DRAFT.md"
+    label="CICLO_${cycle}"
+    plan_file="$OUTBOX_DIR/$(make_filename PLAN "$label" "1_0" "DRAFT")"
 
     # Leer la propuesta y extraer contexto
     prop_title=$(head -1 "$prop_file" 2>/dev/null || echo "Propuesta $cycle")
@@ -369,7 +590,7 @@ execute() {
     fi
 
     cycle=$(get_cycle)
-    result_file="$OUTBOX_DIR/cycle_${cycle}_RESULTADO_v1_0.md"
+    result_file="$OUTBOX_DIR/$(make_filename RESULTADO "CICLO_${cycle}" "1_0" "EXECUTED")"
 
     # Snapshot git para rollback
     ROLLBACK_HASH=""
@@ -502,7 +723,7 @@ verify() {
     lock
     set_state "verifying"
     cycle=$(get_cycle)
-    report_file="$OUTBOX_DIR/cycle_${cycle}_VERIFICACION_v1_0.md"
+    report_file="$OUTBOX_DIR/$(make_filename VERIFICACION "CICLO_${cycle}" "1_0" "VERIFIED")"
 
     log "Ejecutando validaciones..."
 
@@ -714,7 +935,8 @@ ai_propose() {
     analyze "$instruction" >/dev/null 2>&1
 
     cycle=$(get_cycle)
-    prop_file="$OUTBOX_DIR/cycle_${cycle}_PROPUESTA_v1_0_DRAFT.md"
+    label="CICLO_${cycle}"
+    prop_file="$OUTBOX_DIR/$(make_filename PROPUESTA "$label" "1_0" "DRAFT")"
 
     if ! command -v opencode >/dev/null 2>&1; then
         log "AI: opencode no disponible, usando template estándar"
@@ -782,6 +1004,10 @@ main() {
             ;;
         status)
             show_status
+            ;;
+        train)
+            shift
+            train "$@"
             ;;
         clean)
             clean
@@ -874,6 +1100,10 @@ main() {
             echo "  $0 verify                       Paso 9: ejecuta validaciones y reporta"
             echo "  $0 listen                       Modo escucha: procesa archivos .md en inbox/"
             echo "  $0 status                       Muestra estado actual"
+            echo "  $0 train naming '<patrón>'     Entrena nomenclatura de archivos"
+            echo "  $0 train example <archivo> [resultado]  Registra ejemplo de entrenamiento"
+            echo "  $0 train list                   Lista ejemplos registrados"
+            echo "  $0 train show <id>              Muestra un ejemplo por ID"
             echo "  $0 clean                        Limpia estado"
             echo "  $0 clean-all                    Limpia estado + archivos generados"
             echo ""

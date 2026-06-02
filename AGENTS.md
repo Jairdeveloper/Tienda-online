@@ -4,54 +4,83 @@
 
 ```
 /
-├── src/                    # NestJS application source
-│   ├── main.ts             # Bootstrap, global middleware (x-request-id), Swagger
-│   ├── app.module.ts       # Root module: all domain modules + 3 global guards
-│   ├── config/             # Joi env validation schema
-│   ├── common/             # @Global() JsonLoggerService, CacheService, HttpExceptionFilter
-│   ├── prisma/             # @Global() PrismaService (extends PrismaClient)
-│   ├── redis/              # @Global() RedisService, RedisLockService, REDIS_CLIENT token
-│   ├── auth/               # JWT auth, RBAC guards, strategies, decorators
-│   ├── users/              # User CRUD, addresses
-│   ├── catalog/            # Product catalog, categories
-│   ├── inventory/          # Stock by variant
-│   ├── cart/               # Persistent cart per user/session
-│   ├── checkout/           # Checkout flow
-│   ├── orders/             # Orders + order items
-│   ├── payments/           # Payment processing (provider pattern)
-│   ├── admin/              # Admin operations
-│   └── types/              # Express Request augmentation (requestId, user)
-├── prisma/
-│   ├── schema.prisma       # 22 models (telegram_id removed from User)
-│   ├── migrations/         # 3 migrations (baseline, business entities, remove telegram)
-│   └── seed.ts             # Roles, permissions, 4 categories, 5 demo products, admin user
-├── test/                   # E2E tests (Jest, supertest, 120s timeout)
-├── dist/                   # Build output (gitignored)
-├── .github/workflows/      # CI pipeline
-├── Dockerfile              # Multi-stage build (fixed flat paths)
-├── docker-compose.yml      # PostgreSQL + Redis + API
-├── package.json            # Single package (no monorepo workspaces)
+├── apps/
+│   ├── api/                    # NestJS backend
+│   │   ├── src/                # Application source
+│   │   │   ├── main.ts         # Bootstrap, global middleware (x-request-id), Swagger
+│   │   │   ├── app.module.ts   # Root module: all domain modules + 3 global guards
+│   │   │   ├── config/         # Joi env validation schema
+│   │   │   ├── common/         # @Global() JsonLoggerService, CacheService, HttpExceptionFilter
+│   │   │   ├── prisma/         # @Global() PrismaService (extends PrismaClient)
+│   │   │   ├── redis/          # @Global() RedisService, RedisLockService, REDIS_CLIENT token
+│   │   │   ├── auth/           # JWT auth, RBAC guards, strategies, decorators
+│   │   │   ├── users/          # User CRUD, addresses
+│   │   │   ├── catalog/        # Product catalog, categories
+│   │   │   ├── inventory/      # Stock by variant
+│   │   │   ├── cart/           # Persistent cart per user/session
+│   │   │   ├── checkout/       # Checkout flow
+│   │   │   ├── orders/         # Orders + order items
+│   │   │   ├── payments/       # Payment processing (provider pattern)
+│   │   │   ├── admin/          # Admin operations
+│   │   │   └── types/          # Express Request augmentation (requestId, user)
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma   # 22 models (telegram_id removed from User)
+│   │   │   ├── migrations/     # 3 migrations (baseline, business entities, remove telegram)
+│   │   │   └── seed.ts         # Roles, permissions, 4 categories, 5 demo products, admin user
+│   │   ├── test/               # E2E tests (Jest, supertest, 120s timeout)
+│   │   ├── api/                # Vercel serverless entry points
+│   │   ├── dist/               # Build output (gitignored)
+│   │   ├── Dockerfile          # Multi-stage build (fixed flat paths)
+│   │   ├── nest-cli.json
+│   │   ├── tsconfig.json
+│   │   └── tsconfig.build.json
+│   │
+│   └── web/                    # Vite frontend SPA
+│       ├── src/                # React application source
+│       ├── index.html
+│       ├── vite.config.ts
+│       ├── tsconfig.json
+│       └── tsconfig.node.json
+│
+├── .github/workflows/          # CI pipeline
+├── docker-compose.yml          # PostgreSQL + Redis + API
+├── vercel.json                 # Vercel routing global
+├── package.json                # Orquestación raíz
 ├── .gitignore
 ├── .env.example
-└── postman/                # API collection + Newman config
+└── postman/                    # API collection + Newman config
 ```
 
 ## Commands (run from repo root)
 
 ```sh
-npm run build              # nest build (deleteOutDir: true — cleans dist first)
-npm run start              # nest start
-npm run start:dev          # nest start --watch
-npm run start:debug        # nest start --debug --watch
-npm run start:prod         # node dist/main
-npm run test               # jest (src/**/*.spec.ts, coverage threshold enforced)
-npm run test:watch         # jest --watch
-npm run test:e2e           # jest --config ./test/jest-e2e.json (needs DB + Redis)
-npm run db:generate        # prisma generate
-npm run db:migrate:dev     # prisma migrate dev (creates new migration)
-npm run db:migrate:deploy  # prisma migrate deploy (apply existing migrations)
-npm run db:migrate:status  # prisma migrate status
-npm run db:seed            # prisma db seed (uses ts-node prisma/seed.ts)
+# Backend (apps/api)
+cd apps/api && npm run build              # nest build (deleteOutDir: true — cleans dist first)
+cd apps/api && npm run start              # nest start
+cd apps/api && npm run start:dev          # nest start --watch
+cd apps/api && npm run start:debug        # nest start --debug --watch
+cd apps/api && npm run start:prod         # node dist/main
+cd apps/api && npm test                   # jest (src/**/*.spec.ts, coverage threshold enforced)
+cd apps/api && npm run test:watch         # jest --watch
+cd apps/api && npm run test:e2e           # jest --config ./test/jest-e2e.json (needs DB + Redis)
+cd apps/api && npm run db:generate        # prisma generate
+cd apps/api && npm run db:migrate:dev     # prisma migrate dev (creates new migration)
+cd apps/api && npm run db:migrate:deploy  # prisma migrate deploy (apply existing migrations)
+cd apps/api && npm run db:migrate:status  # prisma migrate status
+cd apps/api && npm run db:seed            # prisma db seed (uses ts-node prisma/seed.ts)
+
+# Frontend (apps/web)
+cd apps/web && npm run dev                # vite dev server
+cd apps/web && npm run build              # tsc -b && vite build
+
+# Orquestación raíz
+npm run build:api                         # cd apps/api && npm run build
+npm run build:web                         # cd apps/web && npm run build
+npm run build                             # npm run build:api && npm run build:web
+npm run dev:api                           # cd apps/api && npm run start:dev
+npm run dev:web                           # cd apps/web && npm run dev
+npm test                                  # cd apps/api && npm test
+npm run test:e2e                          # cd apps/api && npm run test:e2e
 ```
 
 ## Env vars
@@ -70,22 +99,22 @@ npm run db:seed            # prisma db seed (uses ts-node prisma/seed.ts)
 - `WEBHOOK_SECRET=dev-webhook-secret-change-in-production`
 - `NODE_ENV=development`, `LOG_LEVEL=log`
 
-Full schema: `src/config/env.validation.ts` (Joi). Config loads from single `.env` file.
+Full schema: `apps/api/src/config/env.validation.ts` (Joi). Config loads from single `.env` file in root.
 
 ## Architecture
 
 - **Every route requires JWT by default.** Three global guards apply chain: `JwtAuthGuard` → `RolesGuard` → `PermissionsGuard`. Use `@Public()` to bypass. `@Roles()` and `@Permissions()` refine access.
 - **Global modules** (`@Global()`): `PrismaModule`, `RedisModule`, `CommonModule`. Their providers available everywhere without re-importing.
 - **API prefix**: `api/v1` by default. Swagger UI at `api/v1/docs` when enabled.
-- **Request ID**: `x-request-id` read from header (or generated), echoed on every response via middleware in `main.ts`.
+- **Request ID**: `x-request-id` read from header (or generated), echoed on every response via middleware in `apps/api/src/main.ts`.
 - **Validation**: Global `ValidationPipe` with `whitelist: true`, `transform: true`, `forbidNonWhitelisted: true`.
 - **Auth**: `JwtStrategy` extracts bearer token, validates against `JWT_SECRET`. Payload shape: `{ sub, email, roles, permissions }`.
 - **Password hashing**: PBKDF2 + SHA-256 (310k iterations), `salt:hash` hex format. **Not bcrypt.**
 
 ## Testing
 
-- **Unit tests**: `npm run test` — 14 suites, 89 tests. Coverage thresholds: branches 60%, functions 70%, lines 75%, statements 75%.
-- **E2E tests**: `npm run test:e2e` — `*.e2e-spec.ts` in `test/`, timeout 120s. **Requires PostgreSQL and Redis running.** `test/helpers/health-check.ts` verifies connectivity before every suite. `test/jest.setup.ts` sets safe defaults for required env vars.
+- **Unit tests**: `cd apps/api && npm test` — 14 suites, 89 tests. Coverage thresholds: branches 60%, functions 70%, lines 75%, statements 75%.
+- **E2E tests**: `cd apps/api && npm run test:e2e` — `*.e2e-spec.ts` in `apps/api/test/`, timeout 120s. **Requires PostgreSQL and Redis running.** `apps/api/test/helpers/health-check.ts` verifies connectivity before every suite. `apps/api/test/jest.setup.ts` sets safe defaults for required env vars.
 - **Seed**: Creates roles (customer, admin, operator), 10 permissions, 4 categories, 5 products with variants, and admin user (`admin@tienda.local` / `Admin123!`).
 
 ## CI
@@ -94,7 +123,7 @@ GitHub Actions workflow in `.github/workflows/ci.yml`:
 
 - Runs on push/PR to `main`
 - Spins up PostgreSQL + Redis as service containers
-- `npm ci` → `prisma generate` → `prisma migrate deploy` → `npm run build` → `npm test` → `npm run test:e2e`
+- `cd apps/api && npm ci` → `cd apps/api && npx prisma generate` → `cd apps/api && npx prisma migrate deploy` → `cd apps/api && npm run build` → `cd apps/api && npm test` → `cd apps/api && npm run test:e2e`
 
 ## Production URLs
 
@@ -103,7 +132,8 @@ GitHub Actions workflow in `.github/workflows/ci.yml`:
 
 ## Package identity
 
-- **Scope**: `@tienda/api` (private, not published)
+- **API scope**: `@tienda/api` (private, not published) — `apps/api/package.json`
+- **Web scope**: `@tienda/web` (private, not published) — `apps/web/package.json`
 - **TypeScript**: 5.9.3, strict mode, ES2021 target, decorators enabled
 - **Node**: 22-alpine
 - **No linter, no formatter** — add if needed

@@ -1,118 +1,26 @@
 {
-  "name": "@tienda/api",
+  "name": "@tienda/monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "Backend Tienda Online (NestJS + Prisma + PostgreSQL + Redis)",
+  "description": "Monorepo Tienda Online — orquestación de apps/api (NestJS) y apps/web (Vite SPA)",
   "scripts": {
-    "build": "nest build",
-    "build:frontend": "vite build",
-    "dev:frontend": "vite",
-    "preview:frontend": "vite preview",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "db:generate": "prisma generate",
-    "db:migrate:dev": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:status": "prisma migrate status",
-    "db:seed": "prisma db seed"
+    "build:api": "cd apps/api && npm run build",
+    "build:web": "cd apps/web && npm run build",
+    "build": "npm run build:api && npm run build:web",
+    "dev:api": "cd apps/api && npm run start:dev",
+    "dev:web": "cd apps/web && npm run dev",
+    "start:prod": "cd apps/api && npm run start:prod",
+    "test": "cd apps/api && npm test",
+    "test:watch": "cd apps/api && npm run test:watch",
+    "test:e2e": "cd apps/api && npm run test:e2e",
+    "db:generate": "cd apps/api && npm run db:generate",
+    "db:migrate:dev": "cd apps/api && npm run db:migrate:dev",
+    "db:migrate:deploy": "cd apps/api && npm run db:migrate:deploy",
+    "db:migrate:status": "cd apps/api && npm run db:migrate:status",
+    "db:seed": "cd apps/api && npm run db:seed"
   },
   "engines": {
     "node": ">=22.0.0",
     "npm": ">=10.0.0"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
-  },
-  "dependencies": {
-    "@headlessui/react": "^2.2.0",
-    "@heroicons/react": "^2.2.0",
-    "@nestjs/common": "11.1.24",
-    "@nestjs/config": "4.0.4",
-    "@nestjs/core": "11.1.24",
-    "@nestjs/jwt": "11.0.2",
-    "@nestjs/passport": "11.0.5",
-    "@nestjs/platform-express": "11.1.24",
-    "@nestjs/swagger": "11.4.4",
-    "@nestjs/throttler": "6.5.0",
-    "@prisma/client": "5.22.0",
-    "@tanstack/react-query": "^5.75.0",
-    "@upstash/redis": "^1.38.0",
-    "axios": "^1.8.0",
-    "class-transformer": "0.5.1",
-    "class-validator": "0.14.4",
-    "helmet": "^8.2.0",
-    "ioredis": "5.11.0",
-    "joi": "17.13.3",
-    "passport": "0.7.0",
-    "passport-jwt": "4.0.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.0",
-    "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2",
-    "swagger-ui-express": "5.0.1",
-    "uuid": "^14.0.0"
-  },
-  "devDependencies": {
-    "@nestjs/cli": "11.0.21",
-    "@nestjs/testing": "11.1.24",
-    "@tailwindcss/vite": "^4.1.0",
-    "@types/express": "4.17.25",
-    "@types/ioredis": "4.28.10",
-    "@types/jest": "29.5.14",
-    "@types/node": "22.19.19",
-    "@types/passport-jwt": "4.0.1",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
-    "@types/supertest": "6.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.60.0",
-    "@typescript-eslint/parser": "^8.60.0",
-    "@vitejs/plugin-react": "^4.4.0",
-    "eslint": "^10.4.1",
-    "eslint-config-prettier": "^10.1.8",
-    "jest": "29.7.0",
-    "prettier": "^3.8.3",
-    "prisma": "5.22.0",
-    "rollup-plugin-visualizer": "^7.0.1",
-    "supertest": "7.2.2",
-    "tailwindcss": "^4.1.0",
-    "ts-jest": "29.4.11",
-    "ts-node": "10.9.2",
-    "tsconfig-paths": "4.2.0",
-    "typescript": "5.9.3",
-    "vite": "^6.3.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "setupFiles": [
-      "<rootDir>/../test/jest.setup.ts"
-    ],
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "coverageThreshold": {
-      "global": {
-        "branches": 60,
-        "functions": 70,
-        "lines": 75,
-        "statements": 75
-      }
-    },
-    "testEnvironment": "node"
   }
 }

@@ -11,6 +11,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Monorepo migration: estructura de proyecto plana → `apps/api/` (NestJS backend) + `apps/web/` (Vite + React frontend)
+  - `apps/api/package.json`: dependencias backend NestJS con scripts de build, test y Prisma
+  - `apps/api/vercel.json`: configuración de build Vercel para API
+  - `apps/web/package.json`: dependencias frontend Vite + React con scripts de dev y build
+  - `apps/web/vercel.json`: configuración de build Vercel para SPA frontend
+  - `docs/monorepo/043_EXEC_MONOREPO_MIGRATION_1_0_DRAFT.md`: reporte completo de migración (~200 archivos movidos, 4 creados, 14 modificados)
+  - Razón: separación limpia de responsabilidades backend/frontend para despliegues independientes en Vercel
+
+### Changed
+
+- Proyecto reestructurado de layout plano a monorepo con `apps/api/` y `apps/web/`:
+  - Backend (`git mv`): `src/` → `apps/api/src/` (17 módulos NestJS), `api/` → `apps/api/api/` (Vercel serverless), `prisma/` → `apps/api/prisma/` (schema + 3 migrations + seed), `test/` → `apps/api/test/` (7 E2E suites), `nest-cli.json`, `tsconfig.json`, `tsconfig.build.json`, `Dockerfile`
+  - Frontend (`git mv`): `web/` → `apps/web/src/` (componentes, páginas, hooks), `index.html` → `apps/web/index.html`, `vite.config.ts` → `apps/web/vite.config.ts`, `tsconfig.frontend.json` → `apps/web/tsconfig.json`, `tsconfig.node.json` → `apps/web/tsconfig.node.json`
+- `package.json` (root): reducido a solo scripts de orquestación (`build:api`, `build:web`, `dev:api`, `dev:web`)
+- `vercel.json`: routing global adaptado para monorepo (builds, rewrites, headers)
+- `.dockerignore`: patrones glob actualizados para estructura monorepo
+- `.gitignore`: añadidos `apps/*/dist/`, `apps/*/node_modules/`
+- `docker-compose.yml`: build context cambiado a `apps/api/`
+- `apps/api/Dockerfile`: paths ajustados para build context raíz
+- `apps/web/index.html`: script src actualizado a `./src/main.tsx`
+- `apps/web/vite.config.ts`: outDir y alias paths actualizados
+- `apps/web/tsconfig.json`: paths actualizados para nueva estructura
+- `.github/workflows/ci.yml`: comandos prefijados con `cd apps/api &&`
+- `.github/workflows/deploy.yml`: comandos prefijados con `cd apps/api &&`
+- `AGENTS.md`: estructura de directorios y paths actualizados para monorepo
+- `MASTER_INDEX.md`: project map actualizado con nueva estructura
+- `docs/REGISTRO_IDS.md`: registrados IDs 042, 043
+
+### Fixed
+
+- `workflow.sh`: función `train_example()` no existía — implementada con validación JSON y soporte Python
+- `workflow.sh`: dependencia de `jq` eliminada, reescrita con `python3`
+- `workflow.sh`: nuevos comandos `train list` y `train show`
+
+### Added
+
 - Chatbot B2B support foundation and workflow-agent bridge documentation
   - `docs/ai/bot/002_CHATBOT_SPEC_TIENDA_ONLINE_ACTIVE.md`: adds the B2B tienda online chatbot specification with backend/frontend context, roles, permissions, API contract, implementation plan and execution plan
   - `docs/ai/bot/003_CHATBOT_FLOW_TIENDA_ONLINE_ACTIVE.md`: adds ASCII flow diagrams for message processing, admin confirmation, context sources and terminal states

@@ -4,10 +4,10 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react({ tsconfig: "./tsconfig.frontend.json" }), tailwindcss()],
+  plugins: [react(), tailwindcss()],
   root: ".",
   build: {
-    outDir: "dist-frontend",
+    outDir: "dist",
     emptyOutDir: true,
     rollupOptions: {
       output: {
@@ -22,7 +22,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./web"),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
   server: {

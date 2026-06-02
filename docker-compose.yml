@@ -12,7 +12,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tienda} -d ${POSTGRES_DB:-tienda_online}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-tienda} -d ${POSTGRES_DB:-tienda_online}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,7 +39,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/api/Dockerfile
     container_name: tienda_api
     restart: unless-stopped
     ports:

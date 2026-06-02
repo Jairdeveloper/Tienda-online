@@ -16,9 +16,11 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 
 ## ARCH (Architecture)
 
-| ID  | Archivo                                 | Área         | Tipo | Estado | Creado     |
-| --- | --------------------------------------- | ------------ | ---- | ------ | ---------- |
-| 001 | `001_ARCH_SYSTEM_OVERVIEW_1_0_DRAFT.md` | architecture | ARCH | DRAFT  | 2026-05-23 |
+| ID  | Archivo                                    | Área         | Tipo | Estado | Creado     |
+| --- | ------------------------------------------ | ------------ | ---- | ------ | ---------- |
+| 001 | `001_ARCH_SYSTEM_OVERVIEW_1_0_DRAFT.md`    | architecture | ARCH | DRAFT  | 2026-05-23 |
+| 042 | `042_ARCH_MONOREPO_STRUCTURE_1_0_DRAFT.md` | architecture | ARCH | DRAFT  | 2026-06-01 |
+| 043 | `043_EXEC_MONOREPO_MIGRATION_1_0_DRAFT.md` | architecture | EXEC | DRAFT  | 2026-06-02 |
 
 ## DB (Database)
 

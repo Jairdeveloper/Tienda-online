@@ -1,21 +1,21 @@
 {
-  "installCommand": "npm ci --include=dev",
-  "buildCommand": "npm run build:frontend && npx prisma generate --schema=prisma/schema.prisma && npm run build",
-  "outputDirectory": "dist-frontend",
+  "installCommand": "cd apps/api && npm ci --include=dev && cd ../../apps/web && npm ci --include=dev",
+  "buildCommand": "cd apps/api && npx prisma generate && cd ../.. && npm run build",
+  "outputDirectory": "apps/web/dist",
   "builds": [
     {
-      "src": "api/diagnostic.js",
+      "src": "apps/api/api/diagnostic.js",
       "use": "@vercel/node"
     },
     {
-      "src": "api/health.js",
+      "src": "apps/api/api/health.js",
       "use": "@vercel/node"
     },
     {
-      "src": "api/index.js",
+      "src": "apps/api/api/index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": "dist/**",
+        "includeFiles": "apps/api/dist/**",
         "bundle": false
       }
     }
@@ -23,18 +23,18 @@
   "rewrites": [
     {
       "source": "/_diag",
-      "destination": "api/diagnostic.js"
+      "destination": "apps/api/api/diagnostic.js"
     },
     {
       "source": "/_health",
-      "destination": "api/health.js"
+      "destination": "apps/api/api/health.js"
     },
     {
       "source": "/api/(.*)",
-      "destination": "api/index.js"
+      "destination": "apps/api/api/index.js"
     },
     {
-      "source": "^/((?!.*\\.).*)$",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
