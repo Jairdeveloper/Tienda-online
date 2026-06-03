@@ -49,3 +49,48 @@ uiente instruccion -> Pasa a siguiente instruccion.
 Lee especificacion /home/john/tienda-online/Tienda-online-agnostica/algoritmos/ALGP004_FLUJO_PROGRAMACION_AGENTES_v1_0_DRAFT.md especialmente la seccion ## Pasos Detallados para que tengas contexto de el dominio del script y de la convencion que se quiere lograr con el script
 
 Crear un frontend web y un bot de soporte para @tienda/api. El frontend debe ser una SPA React que consuma los endpoints del backend. El bot de soporte debe ser un agente IA RAG que use la base de conocimiento en docs/ para responder preguntas
+
+Key things to preserve:
+1. All modes: propose, plan, execute, verify, full, analyze, ai, train (naming, example, list, show), listen, status, clean, clean-all, help
+2. All helper functions: init, log, output, get_state, set_state, get_cycle, inc_cycle, lock, sanitize_slug, make_filename, set_naming_pattern, get_naming_pattern
+3. All environment flags: DRY_RUN, CONTINUE_ON_ERROR, AUTO_APPROVE
+4. File-based state machine
+5. Recursive calling pattern
+6. Training system
+7. Rollback capability
+8. Listen mode
+9. AI proposal generation
+Let me write the complete rewrite now.
+I'll organize it as:
+1. Header
+2. Constants
+3. Environment flags
+4. Utility functions (log, output, init)
+5. State management (get_state, set_state, get_cycle, inc_cycle)
+6. Lock management
+7. Naming/file helpers (sanitize_slug, get_naming_pattern, make_filename, set_naming_pattern)
+8. Training functions (train_example, train_list, train_show, train)
+9. Core workflow functions (propose, await_propuesta_approval, plan, await_plan_approval, execute, verify, rollback)
+10. Analysis/AI functions (analyze, ai_propose)
+11. Listening mode
+12. Status and cleanup
+13. Full cycle
+14. Help
+15. Main dispatch
+
+Flujo completo ideal (compilador):
+Usuario: "Crea un módulo de pagos en NestJS"
+  ↓
+workflow.sh compile "Crea un módulo de pagos..."
+  ↓ LEX: tokeniza → [ACTION(crea), TARGET(modulo), DOMAIN(pagos), TECH(NestJS)]
+  ↓ PARSE: construye AST
+  ↓ SEMANTIC: resuelve con perfil + tabla de símbolos
+  ↓ SCORE: busca acciones similares en training
+  ↓ IR.json: representación intermedia canónica
+  ↓ TRACE: three-address code (trazabilidad)
+  ↓ SYNTHESIS: genera propuesta, plan, o ejecuta directamente
+  ↓ (opcional) BOT: responde por chat
+
+  entrenar al bot con opciones comandos modos para que le responda a workflow.sh
+
+  Arch Linux workflow. This is a meta-level concept - workflow.sh as the OS kernel/framework for the user's interactions with Arch Linux.

@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ThrottlerStorage } from '@nestjs/throttler';
-import * as request from 'supertest';
+import request, { Response } from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ensureDbAndRedis } from './helpers/health-check';
 
@@ -110,7 +110,7 @@ describe('Checkout (e2e)', () => {
         .post('/api/v1/checkout')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ paymentMethod: 'mock', idempotencyKey: key })
-        .expect(res => {
+        .expect((res: Response) => {
           if (res.status === HttpStatus.CONFLICT) {
             expect(res.body.message).toBeDefined();
           }

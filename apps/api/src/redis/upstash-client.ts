@@ -22,7 +22,7 @@ export class UpstashClient {
   async set(key: string, value: string | number, ...args: any[]): Promise<any> {
     try {
       if (args.length === 0) {
-        return this.client.set(key, value);
+        return await this.client.set(key, value);
       }
 
       const exIdx = args.indexOf("EX");
@@ -36,7 +36,7 @@ export class UpstashClient {
         options.nx = true;
       }
 
-      return this.client.set(key, value, options);
+      return await this.client.set(key, value, options);
     } catch (e) {
       console.error(
         `Upstash SET error [${key}]:`,
@@ -48,7 +48,7 @@ export class UpstashClient {
   async del(...keys: string[]): Promise<number> {
     try {
       if (keys.length === 0) return 0;
-      if (keys.length === 1) return this.client.del(keys[0]);
+      if (keys.length === 1) return await this.client.del(keys[0]);
       let count = 0;
       for (const key of keys) {
         count += await this.client.del(key);

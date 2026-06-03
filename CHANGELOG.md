@@ -316,6 +316,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `serverless-http` — incompatible con la firma `(req, res)` de Vercel (espera formato AWS Lambda `(event, context)`); reemplazado por wrapper directo con Promise
 
+### Added
+
+- Preparación para producción del monorepo: CI/CD, base de datos, Redis, variables de entorno y configuración Vercel
+  - `algoritmos/044_DEV_GUIDE_SHELL_STYLE_1_0_DRAFT.md`: guía de estilo Shell para scripts consistentes
+  - `algoritmos/ALGP005_WORKFLOW_OS_ARCH_v1_0_DRAFT.md`: especificación Prompt OS sobre Arquitectura
+  - `apps/api/src/redis/redis-lock.service.spec.ts`: tests unitarios para RedisLockService (10 tests)
+  - `apps/api/src/redis/upstash-client.spec.ts`: tests unitarios para UpstashClient (20 tests)
+  - `docs/monorepo/045_EXEC_MONOREPO_CI_CD_1_0_DRAFT.md`: reporte de ejecución Fase 2 — CI/CD pipeline
+  - `docs/monorepo/046_EXEC_MONOREPO_DB_1_0_DRAFT.md`: reporte de ejecución Fase 3 — Base de datos Neon
+  - `docs/monorepo/047_EXEC_MONOREPO_REDIS_1_0_DRAFT.md`: reporte de ejecución Fase 4 — Redis Upstash
+  - `docs/monorepo/048_EXEC_VARIABLES_ENTORNO_1_0_DRAFT.md`: reporte de ejecución Fase 5 — Variables de entorno
+  - `docs/monorepo/049_EXEC_DEPLOY_VERCEL_1_0_DRAFT.md`: reporte de ejecución Fase 6 — Deploy Vercel
+  - `workflow/034_EXEC_PLAN_PROMPT_COMPILER_1_0_DRAFT.md`: plan de implementación del compilador de prompts
+  - `workflow/035_EXEC_PLAN_PROMPT_OS_1_0_DRAFT.md`: plan de ejecución del Prompt OS
+  - Razón: documentar y planificar todas las fases necesarias para llevar el monorepo a producción
+
+- `package.json`: nuevos scripts `dev:server` y `build:server` para orquestación raíz
+
+### Changed
+
+- `.env.example`: reestructurado con secciones diferenciadas Local/Docker/Production, agregadas variables `WEBHOOK_SECRET` y `UPSTASH_REDIS_TOKEN` con documentación
+- `.github/workflows/ci.yml`: agregado `cache-dependency-path` para lockfiles en `apps/*/` (mejora caché de dependencias)
+- `.github/workflows/deploy.yml`: agregado `prisma generate` + `prisma migrate deploy` en paso `verify-deploy` usando `DATABASE_URL_DIRECT` (conexión directa a Neon para migraciones)
+- `apps/api/prisma/schema.prisma`: `binaryTargets` actualizado a `rhel-openssl-3.0.x` para compatibilidad con runtime serverless de Vercel
+- `workflow.sh`: reescrito (~1260 líneas) siguiendo la guía de estilo Shell (`044_DEV_GUIDE_SHELL_STYLE`): variables siempre con llaves, `[[ ]]` en condicionales, `local` explícito, `$(...)` sobre backticks, `readonly` para constantes, `trap` para cleanup, funciones documentadas, y `set -euo pipefail`
+- `docs/REGISTRO_IDS.md`: registrados IDs 044, 045, 046, 047, 048, 049 y ALGP005
+
+### Fixed
+
+- `apps/api/src/redis/upstash-client.ts`: agregado `return await` en métodos `set()` y `del()` para que errores sean capturados por el try/catch envolvente (antes el return sin await escapaba la excepción)
+- `apps/api/test/*.e2e-spec.ts` (7 archivos): fix import de supertest — cambiado de `import * as request from 'supertest'` a `import request from 'supertest'` para compatibilidad con módulos ES
+
 ---
 
 ## [0.1.0] — 2026-05-29

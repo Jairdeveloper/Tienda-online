@@ -1,21 +1,72 @@
 #!/bin/sh
-# workflow.sh — Algoritmo de flujo de programación con agentes IA
-# Filosofía Unix: "Everything is a file"
-# Recursivo: se invoca a sí mismo para cada paso del ciclo
+# ============================================================================
+# workflow.sh — Programming Flow Automation Script
+# ============================================================================
 #
-# Modos:
-#   propose <instruccion>   — Paso 1-2: genera propuesta desde instrucción TUI
-#   plan <ruta-propuesta>   — Paso 4-5: genera plan desde propuesta
-#   execute <ruta-plan>     — Paso 7-8: ejecuta plan paso a paso
-#   verify                  — Paso 9: ejecuta validaciones y reporta
-#   listen                  — Modo escucha: procesa archivos .md en inbox/
-#   status                  — Muestra estado actual del flujo
-#   clean                   — Limpia estado y archivos temporales
+# PURPOSE:
+#   Automates the software development workflow using AI agents and a
+#   file-based state machine. Follows the Unix philosophy where
+#   "everything is a file" — instructions, proposals, plans, state,
+#   and approvals are all represented as files on disk.
+#
+# CORE CYCLE:
+#   Instruction → Proposal → Approval → Plan → Approval → Execution → Verification
+#
+# PHILOSOPHY:
+#   - Everything is a file: state, queue, artifacts, approvals
+#   - Recursive: invokes itself for each step of the cycle
+#   - Human-in-the-loop: approval via touch .approve / .reject
+#   - Auditable: every action is logged with timestamp
+#   - Self-documenting: help mode shows complete usage
+#
+# ARCHITECTURE:
+#   The workflow is a state machine. Each transition creates or modifies a file.
+#   The script calls itself recursively to advance through the cycle steps.
+#   Environment flags control automation level (DRY_RUN, AUTO_APPROVE).
+#
+# USAGE: ./workflow.sh <mode> [arguments]
+#
+# MODES:
+#   propose  <text>           Step 1-2: Generate proposal from instruction
+#   plan     <file>           Step 4-5: Generate plan from approved proposal
+#   execute  <file>           Step 7-8: Execute plan step by step
+#   verify                    Step 9:   Run validations and generate report
+#   full     [--auto] <text>  Complete cycle: propose → plan → execute → verify
+#   analyze  <text>           Scan source code and generate context
+#   ai       <text>           Generate AI proposal via opencode
+#   train    <subcmd>         Manage training examples
+#     naming  <pattern>       Set file naming pattern
+#     example <file> [result] Register training example
+#     list                    List all training examples
+#     show    <id>            Show specific training example
+#   listen                    Watch inbox/ for incoming instructions
+#   status                    Show current workflow state
+#   clean                     Reset workflow state
+#   clean-all                 Reset state and remove all generated files
+#   help                      Show this help message
+#
+# ENVIRONMENT FLAGS:
+#   DRY_RUN=true           Preview commands without executing
+#   CONTINUE_ON_ERROR=true Continue execution after step failure
+#   AUTO_APPROVE=true      Auto-approve proposals and plans without human review
+#
+# FILES:
+#   .workflow/state               Current state (idle, proposing, planning, etc.)
+#   .workflow/cycle               Current cycle number
+#   .workflow/lock                PID lock for concurrency safety
+#   .workflow/workflow.log        Audit log
+#   .workflow/checkpoint          Resume-from step for interrupted execution
+#   .workflow/naming.cfg          File naming pattern configuration
+#   .workflow/context.md          Dynamic project context for AI
+#   .workflow/inbox/              Instruction queue (drop .md files here)
+#   .workflow/outbox/             Generated artifacts (proposals, plans, results)
+#   .workflow/training/           Training examples directory
+#   .workflow/training/examples.jsonl  Training examples database
+# ============================================================================
 
-# Gestión de errores explícita en lugar de set -e
-# Cada comando se protege individualmente para evitar salidas prematuras
-
-# --- Constantes (everything is a file) ---
+# ============================================================================
+# CONSTANTS
+# ============================================================================
 SCRIPT="$(realpath "$0")"
 PROJECT_ROOT="$(dirname "$SCRIPT")"
 WORKFLOW_DIR="$PROJECT_ROOT/.workflow"
@@ -31,171 +82,216 @@ NAMING_CONFIG_FILE="$WORKFLOW_DIR/naming.cfg"
 TRAINING_DIR="$WORKFLOW_DIR/training"
 TRAINING_EXAMPLES_FILE="$TRAINING_DIR/examples.jsonl"
 
-# --- Flags de comportamiento (via entorno) ---
+# ============================================================================
+# ENVIRONMENT FLAGS
+# ============================================================================
 DRY_RUN="${DRY_RUN:-false}"
 CONTINUE_ON_ERROR="${CONTINUE_ON_ERROR:-false}"
 AUTO_APPROVE="${AUTO_APPROVE:-false}"
 
-# --- Inicialización ---
-init() {
-    mkdir -p "$INBOX_DIR" "$OUTBOX_DIR" "$TRAINING_DIR"
-    touch "$STATE_FILE" "$CYCLE_FILE" "$LOG_FILE" "$TRAINING_EXAMPLES_FILE"
-    if [ ! -f "$NAMING_CONFIG_FILE" ]; then
-cat > "$NAMING_CONFIG_FILE" <<-CFG
-naming_pattern={type}_{label}_v1_0_{state}.md
-CFG
-    fi
-}
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
 
+# --- Log a message to both log file and stderr ---
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"
     echo "$*" >&2
 }
 
-out() {
+# --- Output a message to stdout (for piping/capturing) ---
+output() {
     echo "$*"
 }
 
-# --- Estado (archivos) ---
-get_state() { cat "$STATE_FILE" 2>/dev/null || echo "idle"; }
-set_state() { echo "$1" > "$STATE_FILE"; log "STATE → $1"; }
+# --- Initialize workflow directories and files ---
+init() {
+    mkdir -p "$INBOX_DIR" "$OUTBOX_DIR" "$TRAINING_DIR"
+    touch "$STATE_FILE" "$CYCLE_FILE" "$LOG_FILE" "$TRAINING_EXAMPLES_FILE"
 
-get_cycle() { cat "$CYCLE_FILE" 2>/dev/null || echo "0"; }
-inc_cycle() {
-    c=$(get_cycle)
-    c=$((c + 1))
-    echo "$c" > "$CYCLE_FILE"
-    log "CYCLE → $c"
+    if [ ! -f "$NAMING_CONFIG_FILE" ]; then
+        cat > "$NAMING_CONFIG_FILE" <<-CFG
+naming_pattern={type}_{label}_v1_0_{state}.md
+CFG
+    fi
 }
 
-lock() {
+# --- Handle a fatal error: log, set state, and exit ---
+handle_error() {
+    message="$1"
+    exit_code="${2:-1}"
+    log "ERROR: $message"
+    set_state "error"
+    exit "$exit_code"
+}
+
+# ============================================================================
+# STATE MANAGEMENT
+# ============================================================================
+
+# --- Get current workflow state (default: idle) ---
+get_state() {
+    cat "$STATE_FILE" 2>/dev/null || echo "idle"
+}
+
+# --- Set current workflow state ---
+set_state() {
+    echo "$1" > "$STATE_FILE"
+    log "STATE → $1"
+}
+
+# --- Get current cycle number (default: 0) ---
+get_cycle() {
+    cat "$CYCLE_FILE" 2>/dev/null || echo "0"
+}
+
+# --- Increment cycle number ---
+inc_cycle() {
+    current=$(get_cycle)
+    next=$((current + 1))
+    echo "$next" > "$CYCLE_FILE"
+    log "CYCLE → $next"
+}
+
+# ============================================================================
+# LOCK MANAGEMENT
+# ============================================================================
+
+# --- Acquire a PID lock to prevent concurrent execution ---
+acquire_lock() {
     if [ -f "$LOCK_FILE" ]; then
         pid=$(cat "$LOCK_FILE")
         if kill -0 "$pid" 2>/dev/null; then
-            log "LOCK: proceso $pid en ejecución, abortando"
+            log "ERROR: process $pid is already running. Aborting."
             exit 1
         fi
-        log "LOCK: eliminando lock huérfano (pid $pid)"
+        log "WARN: removing stale lock from dead process $pid"
     fi
     echo "$$" > "$LOCK_FILE"
     trap 'rm -f "$LOCK_FILE"' EXIT
 }
 
+# ============================================================================
+# NAMING AND FILE HELPERS
+# ============================================================================
+
+# --- Sanitize a string for use in filenames (uppercase, underscores) ---
 sanitize_slug() {
     echo "$1" | tr '[:lower:]' '[:upper:]' | sed 's/[^A-Z0-9]/_/g; s/_\+/_/g; s/^_//; s/_$//'
 }
 
+# --- Get the current naming pattern from config file ---
 get_naming_pattern() {
     grep '^naming_pattern=' "$NAMING_CONFIG_FILE" 2>/dev/null | cut -d= -f2- || echo '{type}_{label}_v1_0_{state}.md'
 }
 
+# --- Generate a filename using the configured naming pattern ---
+# Usage: make_filename <type> <label> [version] [state] [module]
 make_filename() {
     type="$1"
     label="$2"
     version="${3:-1_0}"
     state="${4:-DRAFT}"
-    module="${5:-}"
+    module="${5:-CORE}"
     pattern=$(get_naming_pattern)
+
     if [ -z "$label" ]; then
         label="CICLO_$(get_cycle)"
     fi
+
     slug=$(sanitize_slug "$label")
-    if [ -z "$module" ]; then
-        module="CORE"
-    fi
+
     filename=$(printf '%s' "$pattern" | sed \
         -e "s/{type}/$type/g" \
         -e "s/{label}/$slug/g" \
         -e "s/{version}/$version/g" \
         -e "s/{state}/$state/g" \
         -e "s/{module}/$module/g")
+
     echo "$filename"
 }
 
+# --- Set the naming pattern in config file ---
 set_naming_pattern() {
     pattern="$1"
+
     if [ -z "$pattern" ]; then
-        log "ERROR: patrón de nomenclatura vacío"
+        log "ERROR: naming pattern cannot be empty"
         return 1
     fi
+
     mkdir -p "$(dirname "$NAMING_CONFIG_FILE")"
     grep -v '^naming_pattern=' "$NAMING_CONFIG_FILE" 2>/dev/null > "$NAMING_CONFIG_FILE.tmp" || true
     printf 'naming_pattern=%s\n' "$pattern" >> "$NAMING_CONFIG_FILE.tmp"
     mv "$NAMING_CONFIG_FILE.tmp" "$NAMING_CONFIG_FILE"
-    log "Patrón de nomenclatura entrenado: $pattern"
+    log "OK: naming pattern set to '$pattern'"
 }
 
-# --- train_example: registra un ejemplo de entrenamiento ---
+# ============================================================================
+# TRAINING FUNCTIONS
+# ============================================================================
+
+# --- Register a training example from a JSON file ---
 train_example() {
     example_file="$1"
-    result="$2"
+    result="${2:-}"
 
     if [ -z "$example_file" ]; then
-        echo "ERROR: Falta el archivo de ejemplo"
-        echo "Uso: $0 train example <archivo> [resultado]"
-        return 1
+        handle_error "missing example file argument"
     fi
 
     if [ ! -f "$example_file" ]; then
-        echo "ERROR: El archivo '$example_file' no existe"
-        return 1
+        handle_error "example file not found: $example_file"
     fi
 
-    # Generar un ID único para el ejemplo
     example_id="example_$(date +%s)_$(basename "$example_file" | sed 's/\.[^.]*$//' | tr '[:upper:]' '[:lower:]')"
 
-    # Leer contenido del archivo de ejemplo
-    example_content=$(cat "$example_file")
-
-    # Construir entrada JSON enriquecida (usando python3 para JSON válido)
-    # Escribimos un script temporal para evitar problemas de escaping
     py_script="/tmp/train_example_$$.py"
     cat > "$py_script" <<-PYEOF
-	import json, sys, os
-	example_id = os.environ.get('EX_ID', '')
-	example_file = os.environ.get('EX_FILE', '')
-	ts = os.environ.get('EX_TS', '')
-	result = os.environ.get('EX_RESULT', '')
-	training_file = os.environ.get('EX_TRAINING', '')
+import json, sys, os
+entry = {
+    'id': os.environ.get('EX_ID', ''),
+    'timestamp': os.environ.get('EX_TS', ''),
+    'source': os.environ.get('EX_FILE', ''),
+    'type': 'example',
+    'result': os.environ.get('EX_RESULT', '')
+}
+with open(os.environ['EX_FILE']) as f:
+    raw = f.read()
+try:
+    entry['content'] = json.loads(raw)
+except json.JSONDecodeError:
+    entry['content'] = raw
+with open(os.environ['EX_TRAINING'], 'a') as f:
+    f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+PYEOF
 
-	entry = {
-	    'id': example_id,
-	    'timestamp': ts,
-	    'source': example_file,
-	    'type': 'example',
-	    'result': result
-	}
-	with open(example_file) as f:
-	    raw = f.read()
-	try:
-	    entry['content'] = json.loads(raw)
-	except:
-	    entry['content'] = raw
-	with open(training_file, 'a') as f:
-	    f.write(json.dumps(entry, ensure_ascii=False) + '\n')
-	PYEOF
-    EX_ID="$example_id" EX_FILE="$example_file" EX_TS="$(date -Iseconds)" \
-        EX_RESULT="$result" EX_TRAINING="$TRAINING_EXAMPLES_FILE" \
-        python3 "$py_script"
+    EX_ID="$example_id" \
+    EX_FILE="$example_file" \
+    EX_TS="$(date -Iseconds)" \
+    EX_RESULT="$result" \
+    EX_TRAINING="$TRAINING_EXAMPLES_FILE" \
+    python3 "$py_script"
+
     rm -f "$py_script"
 
-    echo "✅ Ejemplo registrado: $example_id"
-    echo "   Archivo fuente: $example_file"
-    echo "   Total ejemplos: $(wc -l < "$TRAINING_EXAMPLES_FILE")"
-
-    log "Ejemplo entrenado: $example_id de $example_file"
+    total_examples=$(wc -l < "$TRAINING_EXAMPLES_FILE")
+    output "Example registered: $example_id"
+    output "  Source: $example_file"
+    output "  Total: $total_examples examples"
+    log "OK: trained example $example_id from $example_file"
 }
 
-# --- train_list: lista ejemplos registrados ---
+# --- List all registered training examples ---
 train_list() {
     if [ ! -f "$TRAINING_EXAMPLES_FILE" ] || [ ! -s "$TRAINING_EXAMPLES_FILE" ]; then
-        echo "No hay ejemplos registrados."
+        output "No training examples registered."
         return 0
     fi
 
-    echo "=== Ejemplos de Entrenamiento ==="
-    echo ""
-    printf "%-30s %-25s %-12s %s\n" "ID" "Timestamp" "Tipo" "Fuente"
+    output "=== Training Examples ==="
+    output ""
+    printf "%-30s %-25s %-12s %s\n" "ID" "Timestamp" "Type" "Source"
     printf "%-30s %-25s %-12s %s\n" "---" "---------" "----" "------"
 
     python3 -c "
@@ -207,30 +303,32 @@ with open('$TRAINING_EXAMPLES_FILE') as f:
             continue
         try:
             obj = json.loads(line)
-            id = obj.get('id', '?')[:28]
+            id_val = obj.get('id', '?')[:28]
             ts = obj.get('timestamp', '?')[:23]
             t = obj.get('type', '?')[:10]
             src = obj.get('source', '?')[:50]
-            print(f'{id:<30} {ts:<25} {t:<12} {src}')
-        except:
+            print(f'{id_val:<30} {ts:<25} {t:<12} {src}')
+        except json.JSONDecodeError:
             pass
 " 2>&1
 
-    echo ""
-    echo "Total: $(wc -l < "$TRAINING_EXAMPLES_FILE") ejemplos"
+    output ""
+    total=$(wc -l < "$TRAINING_EXAMPLES_FILE")
+    output "Total: $total examples"
 }
 
-# --- train_show: muestra un ejemplo por ID ---
+# --- Show a specific training example by ID (partial match supported) ---
 train_show() {
     search="$1"
+
     if [ -z "$search" ]; then
-        echo "Uso: $0 train show <id>"
-        echo "Usa '$0 train list' para ver los IDs disponibles"
+        output "Usage: $0 train show <id>"
+        output "Use '$0 train list' to see available IDs"
         return 1
     fi
 
     if [ ! -f "$TRAINING_EXAMPLES_FILE" ]; then
-        echo "No hay ejemplos registrados."
+        output "No training examples registered."
         return 1
     fi
 
@@ -247,319 +345,310 @@ with open('$TRAINING_EXAMPLES_FILE') as f:
             obj = json.loads(line)
             obj_id = obj.get('id', '')
             if search in obj_id.lower() or search == obj_id:
-                print('=== Ejemplo:', obj_id, '===')
+                print('=== Example:', obj_id, '===')
                 print(json.dumps(obj, indent=2, ensure_ascii=False))
                 found = True
                 break
-        except:
+        except json.JSONDecodeError:
             pass
 if not found:
-    print('No se encontró ejemplo con ID que contenga \"$search\"')
+    print('No example found with ID containing \"$search\"')
     sys.exit(1)
 " 2>&1
 }
 
-# --- train: modo de entrenamiento ---
+# --- Dispatch training subcommands ---
 train() {
     init
-    case "$1" in
+    subcommand="$1"
+    shift 2>/dev/null || true
+
+    case "$subcommand" in
         naming)
-            shift
             pattern="$*"
             if [ -z "$pattern" ]; then
-                echo "Uso: $0 train naming '<patrón>'"
+                output "Usage: $0 train naming '<pattern>'"
                 exit 1
             fi
             set_naming_pattern "$pattern"
             echo "{\"timestamp\":\"$(date -Iseconds)\",\"type\":\"naming\",\"pattern\":\"$pattern\"}" >> "$TRAINING_EXAMPLES_FILE"
             ;;
         example)
-            shift
             train_example "$@"
             ;;
         list)
             train_list
             ;;
         show)
-            shift
             train_show "$@"
             ;;
         *)
-            echo "Uso: $0 train naming '<patrón>' | $0 train example <archivo> [resultado]"
-            echo "       $0 train list | $0 train show <id>"
+            output "Usage: $0 train naming '<pattern>'"
+            output "       $0 train example <file> [result]"
+            output "       $0 train list"
+            output "       $0 train show <id>"
             exit 1
             ;;
     esac
 }
 
-# --- Paso 1-2: Solicitud y Entrega de Propuesta ---
+# ============================================================================
+# CORE WORKFLOW FUNCTIONS
+# ============================================================================
+
+# --- Step 1-2: Generate a proposal from an instruction ---
 propose() {
-    lock
+    acquire_lock
     set_state "proposing"
     inc_cycle
     cycle=$(get_cycle)
     instruction="$*"
 
     if [ -z "$instruction" ]; then
-        log "ERROR: instrucción vacía"
-        set_state "idle"
-        exit 1
+        handle_error "instruction cannot be empty"
     fi
 
-    # Escribir la instrucción a un archivo (everything is a file)
-    inst_file="$INBOX_DIR/cycle_${cycle}_instruction.md"
-    cat > "$inst_file" <<-INSTR_EOF
-	---
-	id: instruction_${cycle}
-	type: INSTRUCTION
-	actor: user
-	timestamp: $(date -Iseconds)
-	status: received
-	---
-	
-	# Instrucción — Ciclo $cycle
-	
-	$instruction
-	INSTR_EOF
-	log "Instrucción escrita: $inst_file"
+    instruction_file="$INBOX_DIR/cycle_${cycle}_instruction.md"
+    cat > "$instruction_file" <<-EOF
+---
+id: instruction_${cycle}
+type: INSTRUCTION
+actor: user
+timestamp: $(date -Iseconds)
+status: received
+---
 
-    # Generar propuesta (con contexto dinámico si existe)
+# Instruction — Cycle $cycle
+
+$instruction
+EOF
+    log "OK: instruction written to $instruction_file"
+
     label="CICLO_${cycle}"
-    prop_file="$OUTBOX_DIR/$(make_filename PROPUESTA "$label" "1_0" "DRAFT")"
+    proposal_file="$OUTBOX_DIR/$(make_filename PROPUESTA "$label" "1_0" "DRAFT")"
     context_file="$WORKFLOW_DIR/context.md"
+
     if [ -f "$context_file" ]; then
         context_block=$(head -c 1000 "$context_file")
     else
         context_block="$(echo "$instruction" | head -c 500)"
     fi
 
-    cat > "$prop_file" <<-PROP_EOF
-	---
-	id: propuesta_${cycle}
-	type: PROPUESTA
-	actor: system
-	timestamp: $(date -Iseconds)
-	status: DRAFT
-	source: ${inst_file}
-	tags:
-	  - proposal
-	  - cycle-${cycle}
-	summary: "Propuesta generada automáticamente a partir de la instrucción del ciclo ${cycle}."
-	---
-	
-	# Propuesta — Ciclo $cycle
-	
-	## Contexto
-	
-	$context_block
-	
-	## Análisis
-	
-	La instrucción solicita un cambio en el código base. A continuación se
-	desglosa el alcance:
-	
-	- **Motivación:** (describir por qué se necesita este cambio)
-	- **Archivos potencialmente afectados:** (listar archivos relevantes del contexto)
-	- **Dependencias:** (servicios, módulos, librerías involucradas)
-	- **Alternativas consideradas:** (opciones descartadas brevemente)
-	
-	## Propuesta
-	
-	Se propone el siguiente enfoque:
-	
-	1. **Objetivo:** (qué se va a implementar/cambiar)
-	2. **Estrategia:** (cómo se va a implementar)
-	3. **Pruebas:** (cómo se va a verificar)
-	4. **Criterio de éxito:** (qué determina que está completo)
-	
-	## Implicaciones
-	
-	- **Rendimiento:** (impacto esperado)
-	- **Seguridad:** (consideraciones de seguridad)
-	- **Base de datos:** (cambios de esquema si aplica)
-	- **Compatibilidad hacia atrás:** (breaking changes)
-	- **Mantenibilidad:** (deuda técnica, cobertura de tests)
-	
-	---
-	_Generado por workflow.sh en $(date)_
-	PROP_EOF
+    cat > "$proposal_file" <<-EOF
+---
+id: propuesta_${cycle}
+type: PROPUESTA
+actor: system
+timestamp: $(date -Iseconds)
+status: DRAFT
+source: ${instruction_file}
+tags:
+  - proposal
+  - cycle-${cycle}
+summary: "Proposal generated from instruction in cycle ${cycle}."
+---
 
-    log "Propuesta generada: $prop_file"
-    set_state "awaiting_review:propuesta:$cycle"
-    echo "$prop_file"
+# Proposal — Cycle $cycle
+
+## Context
+
+$context_block
+
+## Analysis
+
+The instruction requests a change to the codebase:
+
+- **Motivation:** (why this change is needed)
+- **Files potentially affected:** (list relevant files)
+- **Dependencies:** (services, modules, libraries involved)
+- **Alternatives considered:** (briefly note discarded options)
+
+## Approach
+
+1. **Objective:** (what will be implemented/changed)
+2. **Strategy:** (how it will be implemented)
+3. **Testing:** (how it will be verified)
+4. **Success criteria:** (what determines completion)
+
+## Implications
+
+- **Performance:** (expected impact)
+- **Security:** (security considerations)
+- **Database:** (schema changes if applicable)
+- **Backward compatibility:** (breaking changes)
+- **Maintainability:** (technical debt, test coverage)
+
+---
+_Generated by workflow.sh at $(date)_
+EOF
+
+    log "OK: proposal generated at $proposal_file"
+    set_state "awaiting_review:proposal:$cycle"
+    output "$proposal_file"
 }
 
-# --- Paso 3: Verificar que el usuario aprobó la propuesta ---
-# La aprobación se indica tocando/creando un archivo .approve
-await_propuesta_approval() {
-    prop_file="$1"
+# --- Step 3: Wait for human approval of a proposal ---
+await_proposal_approval() {
+    proposal_file="$1"
     cycle="$2"
-    approve_file="${prop_file}.approve"
-    reject_file="${prop_file}.reject"
+    approve_file="${proposal_file}.approve"
+    reject_file="${proposal_file}.reject"
 
-    # Auto-approve si el flag está activo y no hay .approve aún
     if [ "$AUTO_APPROVE" = "true" ] && [ ! -f "$approve_file" ] && [ ! -f "$reject_file" ]; then
         touch "$approve_file"
-        log "AUTO-APPROVE: propuesta aprobada automáticamente"
+        log "AUTO-APPROVE: proposal automatically approved"
     fi
 
-    log "Esperando revisión humana de: $prop_file"
-    log "Para ACEPTAR: touch \"$approve_file\""
-    log "Para RECHAZAR: touch \"$reject_file\""
+    log "WAITING: human review for proposal: $proposal_file"
+    log "  To APPROVE: touch \"$approve_file\""
+    log "  To REJECT:  touch \"$reject_file\""
 
     while true; do
         if [ -f "$approve_file" ]; then
-            log "Propuesta ACEPTADA"
+            log "OK: proposal APPROVED"
             rm -f "$reject_file" 2>/dev/null
-            set_state "approved:propuesta:$cycle"
+            set_state "approved:proposal:$cycle"
             return 0
         fi
         if [ -f "$reject_file" ]; then
-            log "Propuesta RECHAZADA"
+            log "OK: proposal REJECTED"
             rm -f "$approve_file" 2>/dev/null
-            set_state "rejected:propuesta:$cycle"
+            set_state "rejected:proposal:$cycle"
             return 1
         fi
         sleep 2
     done
 }
 
-# --- Paso 4-5: Solicitud y Entrega de Plan ---
+# --- Step 4-5: Generate a plan from an approved proposal ---
 plan() {
-    lock
-    prop_file="$1"
+    acquire_lock
+    proposal_file="$1"
     set_state "planning"
 
-    if [ ! -f "$prop_file" ]; then
-        log "ERROR: archivo de propuesta no encontrado: $prop_file"
-        set_state "idle"
-        exit 1
+    if [ ! -f "$proposal_file" ]; then
+        handle_error "proposal file not found: $proposal_file"
     fi
 
     cycle=$(get_cycle)
     label="CICLO_${cycle}"
     plan_file="$OUTBOX_DIR/$(make_filename PLAN "$label" "1_0" "DRAFT")"
 
-    # Leer la propuesta y extraer contexto
-    prop_title=$(head -1 "$prop_file" 2>/dev/null || echo "Propuesta $cycle")
-    prop_summary=$(grep "^summary:" "$prop_file" 2>/dev/null | sed 's/summary: "//;s/"$//' || echo "")
+    proposal_summary=$(grep "^summary:" "$proposal_file" 2>/dev/null | sed 's/summary: "//;s/"$//' || echo "")
 
     context_file="$WORKFLOW_DIR/context.md"
     if [ -f "$context_file" ]; then
-        context_block_plan=$(head -c 800 "$context_file")
+        context_block=$(head -c 800 "$context_file")
     else
-        context_block_plan=""
+        context_block=""
     fi
 
-    cat > "$plan_file" <<-PLAN_EOF
-	---
-	id: plan_${cycle}
-	type: PLAN
-	actor: system
-	timestamp: $(date -Iseconds)
-	status: DRAFT
-	source: ${prop_file}
-	dependencies: []
-	tags:
-	  - plan
-	  - cycle-${cycle}
-	summary: "Plan de ejecución para la propuesta del ciclo ${cycle}: ${prop_summary}"
-	---
-	
-	# Plan de Ejecución — Ciclo $cycle
-	
-	## Contexto del análisis
-	
-	$context_block_plan
-	
-	## Pre-vuelo
-	
-	- [ ] Branch creada a partir de main
-	- [ ] Dependencias instaladas (npm ci)
-	- [ ] Prisma Client generado (npm run db:generate)
-	- [ ] Variables de entorno verificadas
-	
-	## Prerrequisitos
-	
-	\`\`\`bash
-	npm ci
-	npm run db:generate
-	\`\`\`
-	
-	## Pasos
-	
-	Lista de pasos atómicos necesarios para completar la propuesta.
-	Cada paso sigue la estructura: archivos → acción → verificación.
-	
-	### Paso 1: [Acción]
-	
-	- **Archivos involucrados:** 
-	- **Acción:** 
-	- **Comandos:**
-	  \`\`\`bash
-	  # Comandos a ejecutar para este paso
-	  \`\`\`
-	- **Verificación:** 
-	
-	## Post-ejecución
-	
-	- [ ] Ejecutar \`npm run build\`
-	- [ ] Ejecutar \`npm test\`
-	- [ ] Verificar resultado
-	
-	## Rollback
-	
-	Procedimiento para revertir cada paso en caso de fallo:
-	
-	- **Paso 1:** (cómo revertir el paso 1)
-	- **Regla general:** Si algún paso falla, detener la ejecución y revertir
-	  los cambios realizados hasta ese punto. Usar \`git checkout\` para
-	  cambios no commiteados y \`git revert\` para cambios ya commiteados.
-	
-	## Riesgos
-	
-	Puntos críticos a considerar durante la ejecución:
-	
-	- **Disponibilidad:** (caída de servicios externos)
-	- **Base de datos:** (pérdida de datos, migraciones fallidas)
-	- **Tiempo de ejecución:** (pasos que puedan tomar más de lo esperado)
-	- **Dependencias externas:** (APIs, librerías de terceros)
-	
-	---
-	_Generado por workflow.sh en $(date)_
-	PLAN_EOF
+    cat > "$plan_file" <<-EOF
+---
+id: plan_${cycle}
+type: PLAN
+actor: system
+timestamp: $(date -Iseconds)
+status: DRAFT
+source: ${proposal_file}
+dependencies: []
+tags:
+  - plan
+  - cycle-${cycle}
+summary: "Execution plan for proposal in cycle ${cycle}: ${proposal_summary}"
+---
 
-    log "Plan generado: $plan_file"
+# Execution Plan — Cycle $cycle
+
+## Analysis Context
+
+$context_block
+
+## Pre-flight Checks
+
+- [ ] Branch created from main
+- [ ] Dependencies installed (npm ci)
+- [ ] Prisma Client generated (npm run db:generate)
+- [ ] Environment variables verified
+
+## Prerequisites
+
+\`\`\`bash
+npm ci
+npm run db:generate
+\`\`\`
+
+## Steps
+
+Atomic steps needed to complete the proposal.
+Each step follows: files → action → verification.
+
+### Step 1: [Action]
+
+- **Files involved:**
+- **Action:**
+- **Commands:**
+  \`\`\`bash
+  # Commands to execute for this step
+  \`\`\`
+- **Verification:**
+
+## Post-execution
+
+- [ ] Run \`npm run build\`
+- [ ] Run \`npm test\`
+- [ ] Verify results
+
+## Rollback
+
+Procedure to revert each step on failure:
+
+- **Step 1:** (how to revert step 1)
+- **General rule:** If any step fails, stop execution and revert.
+  Use \`git checkout\` for uncommitted changes and
+  \`git revert\` for committed changes.
+
+## Risks
+
+- **Availability:** (external service outages)
+- **Database:** (data loss, failed migrations)
+- **Execution time:** (steps that may take longer than expected)
+- **External dependencies:** (third-party APIs, libraries)
+
+---
+_Generated by workflow.sh at $(date)_
+EOF
+
+    log "OK: plan generated at $plan_file"
     set_state "awaiting_review:plan:$cycle"
-    echo "$plan_file"
+    output "$plan_file"
 }
 
-# --- Paso 6: Verificar aprobación del plan ---
+# --- Step 6: Wait for human approval of a plan ---
 await_plan_approval() {
     plan_file="$1"
     cycle="$2"
     approve_file="${plan_file}.approve"
     reject_file="${plan_file}.reject"
 
-    # Auto-approve si el flag está activo y no hay .approve aún
     if [ "$AUTO_APPROVE" = "true" ] && [ ! -f "$approve_file" ] && [ ! -f "$reject_file" ]; then
         touch "$approve_file"
-        log "AUTO-APPROVE: plan aprobado automáticamente"
+        log "AUTO-APPROVE: plan automatically approved"
     fi
 
-    log "Esperando revisión humana del plan: $plan_file"
-    log "Para ACEPTAR: touch \"$approve_file\""
-    log "Para RECHAZAR: touch \"$reject_file\""
+    log "WAITING: human review for plan: $plan_file"
+    log "  To APPROVE: touch \"$approve_file\""
+    log "  To REJECT:  touch \"$reject_file\""
 
     while true; do
         if [ -f "$approve_file" ]; then
-            log "Plan ACEPTADO"
+            log "OK: plan APPROVED"
             rm -f "$reject_file" 2>/dev/null
             set_state "approved:plan:$cycle"
             return 0
         fi
         if [ -f "$reject_file" ]; then
-            log "Plan RECHAZADO"
+            log "OK: plan REJECTED"
             rm -f "$approve_file" 2>/dev/null
             set_state "rejected:plan:$cycle"
             return 1
@@ -568,166 +657,165 @@ await_plan_approval() {
     done
 }
 
-# --- Rollback (restaura archivos no commiteados) ---
+# --- Rollback uncommitted changes using git ---
 rollback() {
-    log "ROLLBACK: revirtiendo cambios no commiteados"
+    log "ROLLBACK: reverting uncommitted changes"
     if [ -n "$ROLLBACK_HASH" ]; then
         git checkout -- "$PROJECT_ROOT" 2>/dev/null || true
-        log "ROLLBACK: archivos restaurados a $ROLLBACK_HASH"
+        log "ROLLBACK: files restored to $ROLLBACK_HASH"
     fi
 }
 
-# --- Paso 7-8: Ejecución del Plan ---
+# --- Step 7-8: Execute a plan step by step ---
 execute() {
-    lock
+    acquire_lock
     plan_file="$1"
     set_state "executing"
 
     if [ ! -f "$plan_file" ]; then
-        log "ERROR: archivo de plan no encontrado: $plan_file"
-        set_state "idle"
-        exit 1
+        handle_error "plan file not found: $plan_file"
     fi
 
     cycle=$(get_cycle)
     result_file="$OUTBOX_DIR/$(make_filename RESULTADO "CICLO_${cycle}" "1_0" "EXECUTED")"
 
-    # Snapshot git para rollback
+    # Git snapshot for rollback
     ROLLBACK_HASH=""
     if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
         ROLLBACK_HASH=$(git rev-parse HEAD)
-        log "Git snapshot: $ROLLBACK_HASH"
+        log "GIT: snapshot at $ROLLBACK_HASH"
     fi
 
-    log "Iniciando ejecución del plan: $plan_file"
+    log "EXECUTING: plan $plan_file"
 
-    # Checkpoint: reanudar desde el último paso completado si existe
+    # Checkpoint: resume from last completed step
     RESUME_FROM=""
     if [ -f "$CHECKPOINT_FILE" ]; then
         RESUME_FROM=$(cat "$CHECKPOINT_FILE")
-        log "Checkpoint encontrado: paso $RESUME_FROM. Reanudando..."
+        log "CHECKPOINT: resuming from step $RESUME_FROM"
     fi
 
-    # Extraer pasos del plan (líneas que comienzan con "### Paso")
-    # Nota: sin -n para evitar contaminar step_num con números de línea
-    steps=$(grep -E "^### Paso [0-9]+:" "$plan_file" || echo "")
-    steps_file="$WORKFLOW_DIR/steps.tmp"
-    echo "$steps" > "$steps_file"
+    # Extract steps from plan (lines starting with "### Step N:")
+    steps_file="$WORKFLOW_DIR/steps_$$.tmp"
+    grep -E "^### Step [0-9]+:" "$plan_file" > "$steps_file" 2>/dev/null || true
 
-    if [ -z "$steps" ]; then
-        log "No se encontraron pasos en el plan. Buscando pasos marcados como PENDING..."
+    if [ ! -s "$steps_file" ]; then
+        log "WARN: no steps found in plan (looking for '### Step N:' headers)"
     fi
 
-    # Por cada paso, ejecutar (simulado — el usuario debe rellenar los pasos reales)
-    exec_log="$OUTBOX_DIR/cycle_${cycle}_execution_log.md"
-    cat > "$exec_log" <<-LOG_EOF
-	# Log de Ejecución — Ciclo $cycle
-	
-	**Plan:** $plan_file
-	**Inicio:** $(date -Iseconds)
-	
-	## Pasos
-	
-	LOG_EOF
+    # Execution log
+    execution_log="$OUTBOX_DIR/cycle_${cycle}_execution_log.md"
+    cat > "$execution_log" <<-EOF
+# Execution Log — Cycle $cycle
 
-    # Usar archivo temporal en lugar de pipe para evitar subshell
+**Plan:** $plan_file
+**Started:** $(date -Iseconds)
+
+## Steps
+
+EOF
+
     while read -r line; do
-        step_num=$(echo "$line" | sed 's/^### Paso \([0-9]*\):.*/\1/')
-        step_name=$(echo "$line" | sed 's/^### Paso [0-9]*: \(.*\)/\1/')
+        step_number=$(echo "$line" | sed 's/^### Step \([0-9]*\):.*/\1/')
+        step_name=$(echo "$line" | sed 's/^### Step [0-9]*: \(.*\)/\1/')
 
-        if [ -n "$step_num" ]; then
-            if [ -n "$RESUME_FROM" ] && [ "$step_num" -le "$RESUME_FROM" ]; then
-                log "Paso $step_num ya completado (checkpoint), saltando..."
-                echo "- **Paso $step_num:** $step_name ✅ (desde checkpoint)" >> "$exec_log"
-                continue
-            fi
-
-            log "Ejecutando Paso $step_num: $step_name"
-
-            # Verificar si el paso tiene comandos
-            step_content=$(sed -n "/^### Paso $step_num:/,/^### Paso /p" "$plan_file" 2>/dev/null | head -n -1 || true)
-            commands=$(echo "$step_content" | sed -n '/```bash/,/```/p' | sed '1d;$d' 2>/dev/null || true)
-
-            if [ -n "$commands" ]; then
-                log "Ejecutando comandos del paso $step_num..."
-                {
-                    echo "### Ejecución Paso $step_num: $step_name"
-                    echo '```bash'
-                    echo "$commands"
-                    echo '```'
-                } >> "$exec_log"
-
-                if [ "$DRY_RUN" != "true" ]; then
-                    if eval "$commands" >> "$exec_log" 2>&1; then
-                        echo "✅ Paso $step_num completado" >> "$exec_log"
-                        log "Paso $step_num: OK"
-                        echo "$step_num" > "$CHECKPOINT_FILE"
-                    else
-                        exit_code=$?
-                        echo "❌ Paso $step_num FALLÓ (exit code: $exit_code)" >> "$exec_log"
-                        log "ERROR: Paso $step_num falló (exit code: $exit_code)"
-                        echo "- **Paso $step_num:** $step_name ❌ FALLÓ" >> "$exec_log"
-                        if [ "$CONTINUE_ON_ERROR" != "true" ]; then
-                            log "Abortando ejecución por error en paso $step_num"
-                            rollback
-                            break
-                        fi
-                    fi
-                else
-                    log "[DRY-RUN] Comandos del paso $step_num (no ejecutados)"
-                    echo "✅ Paso $step_num: DRY-RUN (sin ejecución)" >> "$exec_log"
-                fi
-            fi
-
-            echo "- **Paso $step_num:** $step_name ✅ COMPLETADO" >> "$exec_log"
+        if [ -z "$step_number" ]; then
+            continue
         fi
+
+        # Skip if already completed via checkpoint
+        if [ -n "$RESUME_FROM" ] && [ "$step_number" -le "$RESUME_FROM" ]; then
+            log "SKIP: step $step_number already completed (checkpoint)"
+            echo "- **Step $step_number:** $step_name ✅ (from checkpoint)" >> "$execution_log"
+            continue
+        fi
+
+        log "RUNNING: step $step_number: $step_name"
+
+        # Extract bash commands from the step block
+        step_content=$(sed -n "/^### Step $step_number:/,/^### Step /p" "$plan_file" 2>/dev/null | head -n -1 || true)
+        commands=$(echo "$step_content" | sed -n '/```bash/,/```/p' | sed '1d;$d' 2>/dev/null || true)
+
+        if [ -n "$commands" ]; then
+            log "  commands found for step $step_number"
+            {
+                echo "### Execution Step $step_number: $step_name"
+                echo '```bash'
+                echo "$commands"
+                echo '```'
+            } >> "$execution_log"
+
+            if [ "$DRY_RUN" != "true" ]; then
+                if echo "$commands" | sh >> "$execution_log" 2>&1; then
+                    echo "✅ Step $step_number completed" >> "$execution_log"
+                    log "OK: step $step_number completed"
+                    echo "$step_number" > "$CHECKPOINT_FILE"
+                else
+                    exit_code=$?
+                    echo "❌ Step $step_number FAILED (exit: $exit_code)" >> "$execution_log"
+                    log "ERROR: step $step_number failed (exit code: $exit_code)"
+                    echo "- **Step $step_number:** $step_name ❌ FAILED" >> "$execution_log"
+
+                    if [ "$CONTINUE_ON_ERROR" != "true" ]; then
+                        log "ABORT: stopping execution due to step $step_number failure"
+                        rollback
+                        break
+                    fi
+                fi
+            else
+                log "DRY-RUN: commands for step $step_number (not executed)"
+                echo "✅ Step $step_number: DRY-RUN (not executed)" >> "$execution_log"
+            fi
+        fi
+
+        echo "- **Step $step_number:** $step_name ✅ COMPLETED" >> "$execution_log"
     done < "$steps_file"
+
     rm -f "$steps_file"
     rm -f "$CHECKPOINT_FILE"
 
     {
         echo ""
-        echo "## Resultado"
-        echo "- **Estado:** EJECUTADO (comandos ejecutados)"
-    } >> "$exec_log"
+        echo "## Result"
+        echo "- **Status:** EXECUTED"
+    } >> "$execution_log"
 
-    cat > "$result_file" <<-RESULT_EOF
-	---
-	id: resultado_${cycle}
-	type: RESULTADO
-	actor: system
-	timestamp: $(date -Iseconds)
-	status: EXECUTED
-	source: ${plan_file}
-	---
-	
-	# Resultado de Ejecución — Ciclo $cycle
-	
-	**Plan:** $plan_file
-	**Log de ejecución:** $exec_log
-	**Estado:** COMPLETADO PARCIALMENTE
-	
-	El plan se ha ejecutado. Pendiente:
-	- [ ] Revisar el log de ejecución para confirmar que cada paso se completó
-	- [ ] Ejecutar validaciones manuales adicionales si es necesario
-	- [ ] Ejecutar \`workflow.sh verify\` para validaciones automáticas
-	RESULT_EOF
+    cat > "$result_file" <<-EOF
+---
+id: resultado_${cycle}
+type: RESULTADO
+actor: system
+timestamp: $(date -Iseconds)
+status: EXECUTED
+source: ${plan_file}
+---
 
-    log "Ejecución completada: $result_file"
+# Execution Result — Cycle $cycle
+
+**Plan:** $plan_file
+**Execution log:** $execution_log
+**Status:** PARTIALLY COMPLETED
+
+Pending:
+- [ ] Review the execution log to confirm each step completed
+- [ ] Run manual validations if needed
+- [ ] Run \`workflow.sh verify\` for automated validation
+EOF
+
+    log "OK: execution completed at $result_file"
     set_state "executed:$cycle"
-    echo "$result_file"
+    output "$result_file"
 }
 
-# --- Paso 9: Verificación ---
+# --- Step 9: Run validations and generate verification report ---
 verify() {
-    lock
+    acquire_lock
     set_state "verifying"
     cycle=$(get_cycle)
     report_file="$OUTBOX_DIR/$(make_filename VERIFICACION "CICLO_${cycle}" "1_0" "VERIFIED")"
 
-    log "Ejecutando validaciones..."
+    log "VERIFY: running validations..."
 
-    # Construir reporte de validación
     {
         echo "---"
         echo "id: verificacion_${cycle}"
@@ -737,170 +825,67 @@ verify() {
         echo "status: VERIFIED"
         echo "---"
         echo ""
-        echo "# Reporte de Verificación — Ciclo $cycle"
+        echo "# Verification Report — Cycle $cycle"
         echo ""
-        echo "## Validaciones"
+        echo "## Validations"
         echo ""
 
-        # build
         if command -v npm >/dev/null 2>&1 && [ -f "$PROJECT_ROOT/package.json" ]; then
-            echo "### build"
-            if npm run build --prefix "$PROJECT_ROOT" >/dev/null 2>&1; then
+            echo "### Build"
+            if npm run build >/dev/null 2>&1; then
                 echo "- build: ✅ OK"
             else
-                echo "- build: ❌ FALLÓ"
+                echo "- build: ❌ FAILED"
             fi
 
-            echo "### test (unit)"
-            if npm test --prefix "$PROJECT_ROOT" >/dev/null 2>&1; then
+            echo ""
+            echo "### Unit Tests"
+            if npm test >/dev/null 2>&1; then
                 echo "- test: ✅ OK"
             else
-                echo "- test: ❌ FALLÓ"
+                echo "- test: ❌ FAILED"
             fi
         else
-            echo "### validaciones"
-            echo "- npm no disponible — omitiendo validaciones automáticas"
+            echo "### Validation"
+            echo "- npm not available — skipping automatic validations"
         fi
 
         echo ""
-        echo "## Archivos modificados en este ciclo"
+        echo "## Files modified in this cycle"
         echo ""
-        ls -la "$OUTBOX_DIR/" 2>/dev/null | grep "cycle_${cycle}_" || echo "(sin archivos registrados)"
+        ls -la "$OUTBOX_DIR/" 2>/dev/null | grep "cycle_${cycle}_" || echo "(no files registered)"
         echo ""
-        echo "## Pendiente"
+        echo "## Pending"
         echo ""
-        echo "- [ ] El programador debe confirmar visualmente los cambios"
-        echo "- [ ] Si todo OK: \`rm -rf $WORKFLOW_DIR\` para limpiar estado"
-        echo "- [ ] Si hay issues: iterar desde \`propose\`"
+        echo "- [ ] Developer should visually confirm all changes"
+        echo "- [ ] If OK: \`rm -rf $WORKFLOW_DIR\` to clean up"
+        echo "- [ ] If issues: iterate from \`propose\`"
     } > "$report_file"
 
-    log "Reporte de verificación: $report_file"
+    log "OK: verification report at $report_file"
     set_state "verified:$cycle"
-    echo "$report_file"
+    output "$report_file"
 }
 
-# --- Modo escucha: procesa archivos .md en inbox/ ---
-listen() {
-    init
-    log "MODO ESCUCHA iniciado (PID: $$)"
-    echo "$$" > "$PID_FILE"
-    set_state "listening"
+# ============================================================================
+# ANALYSIS AND AI FUNCTIONS
+# ============================================================================
 
-    # Recursivo: este script se queda en loop y se llama a sí mismo
-    # para procesar cada instrucción entrante
-    while true; do
-        for inst_file in "$INBOX_DIR"/*.md; do
-            [ -f "$inst_file" ] || continue
-
-            # Marcar como procesando (renombrar)
-            base=$(basename "$inst_file" .md)
-            processing="${inst_file%.md}.processing"
-
-            if mv "$inst_file" "$processing" 2>/dev/null; then
-                log "Nueva instrucción detectada: $base"
-
-                # Extraer contenido
-                instruction=$(grep -v "^---$" "$processing" | grep -v "^id:" | grep -v "^type:" | \
-                    grep -v "^actor:" | grep -v "^timestamp:" | grep -v "^status:" | \
-                    grep -v "^tags:" | grep -v "^- " | grep -v "^summary:" | \
-                    tail -n +5 2>/dev/null || echo "")
-
-                if [ -z "$instruction" ]; then
-                    instruction=$(tail -n +20 "$processing" 2>/dev/null || echo "Instrucción desde archivo")
-                fi
-
-                # Paso recursivo: llamarse a sí mismo para proponer
-                log "Llamando recursivo: propose desde archivo"
-                prop_file=$("$SCRIPT" propose "$instruction" 2>>"$LOG_FILE")
-
-                if [ -n "$prop_file" ] && [ -f "$prop_file" ]; then
-                    log "Propuesta lista. Esperando aprobación humana..."
-                    if "$SCRIPT" await-propuesta "$prop_file" 2>>"$LOG_FILE"; then
-                        log "Propuesta aprobada. Generando plan..."
-                        plan_file=$("$SCRIPT" plan "$prop_file" 2>>"$LOG_FILE")
-                        if [ -n "$plan_file" ] && [ -f "$plan_file" ]; then
-                            log "Plan listo. Esperando aprobación humana..."
-                            if "$SCRIPT" await-plan "$plan_file" 2>>"$LOG_FILE"; then
-                                log "Plan aprobado. Ejecutando..."
-                                result_file=$("$SCRIPT" execute "$plan_file" 2>>"$LOG_FILE")
-                                log "Ejecutado: $result_file"
-                                "$SCRIPT" verify 2>>"$LOG_FILE"
-                                log "Ciclo completado."
-                            fi
-                        fi
-                    fi
-                fi
-
-                # Mover a procesado
-                done_file="${processing%.processing}.done"
-                mv "$processing" "$done_file" 2>/dev/null || true
-                log "Instrucción procesada: $done_file"
-            fi
-        done
-        sleep 5
-    done
-}
-
-# --- status: muestra estado actual ---
-show_status() {
-    echo "=== Estado del Workflow ==="
-    echo "PID: $$"
-    echo "Script: $SCRIPT"
-    echo "Workflow dir: $WORKFLOW_DIR"
-    echo "Estado: $(get_state)"
-    echo "Ciclo: $(get_cycle)"
-    echo ""
-    echo "=== Archivos en inbox ==="
-    ls -la "$INBOX_DIR" 2>/dev/null || echo "(vacío)"
-    echo ""
-    echo "=== Archivos en outbox ==="
-    ls -la "$OUTBOX_DIR" 2>/dev/null || echo "(vacío)"
-    echo ""
-    echo "=== Últimas líneas del log ==="
-    tail -5 "$LOG_FILE" 2>/dev/null || echo "(sin log)"
-}
-
-# --- clean: limpia estado ---
-clean() {
-    log "Limpiando estado del workflow..."
-    # Detener listener si existe
-    if [ -f "$PID_FILE" ]; then
-        pid=$(cat "$PID_FILE")
-        kill "$pid" 2>/dev/null && log "Listener PID $pid detenido" || true
-        rm -f "$PID_FILE"
-    fi
-    rm -f "$LOCK_FILE"
-    rm -f "$STATE_FILE"
-    rm -f "$CYCLE_FILE"
-    echo "idle" > "$STATE_FILE"
-    echo "0" > "$CYCLE_FILE"
-    log "Estado limpiado."
-    echo "Workflow limpiado. Estado: idle, Ciclo: 0"
-}
-
-# --- clean-all: limpia todo (incluyendo archivos generados) ---
-clean_all() {
-    clean
-    rm -rf "$INBOX_DIR"/* "$OUTBOX_DIR"/* 2>/dev/null
-    log "Todos los archivos generados eliminados."
-    echo "Archivos de inbox y outbox eliminados."
-}
-
-# --- Modo analyze: escanea el código fuente para generar contexto ---
+# --- Scan source code for context relevant to an instruction ---
 analyze() {
     instruction="$*"
     context_file="$WORKFLOW_DIR/context.md"
 
     {
-        echo "# Contexto del Proyecto"
+        echo "# Project Context"
         echo ""
-        echo "Instrucción: $instruction"
+        echo "Instruction: $instruction"
         echo ""
 
-        echo "## Archivos potencialmente relevantes"
+        echo "## Potentially Relevant Files"
         for word in $instruction; do
             [ "${#word}" -lt 4 ] && continue
-            found=$(find "$PROJECT_ROOT/src" -name "*.ts" -path "*${word}*" 2>/dev/null | head -5)
+            found=$(find "$PROJECT_ROOT/apps/api/src" -name "*.ts" -path "*${word}*" 2>/dev/null | head -5)
             if [ -n "$found" ]; then
                 echo ""
                 echo "### $word"
@@ -909,37 +894,36 @@ analyze() {
         done
 
         echo ""
-        echo "## Controladores y endpoints"
+        echo "## Controllers and Endpoints"
         grep -rn "@Controller\|@Public\|@Roles\|@Get\|@Post\|@Put\|@Patch\|@Delete" \
-            "$PROJECT_ROOT/src" --include="*.ts" 2>/dev/null | head -30
+            "$PROJECT_ROOT/apps/api/src" --include="*.ts" 2>/dev/null | head -30
 
         echo ""
-        echo "## Archivos de ruta (imports/exports)"
-        find "$PROJECT_ROOT/src" -name "*.module.ts" -o -name "*.routes.ts" 2>/dev/null | head -10
+        echo "## Module Files"
+        find "$PROJECT_ROOT/apps/api/src" -name "*.module.ts" 2>/dev/null | head -10
     } > "$context_file"
 
-    log "Contexto generado: $context_file"
-    echo "$context_file"
+    log "OK: context generated at $context_file"
+    output "$context_file"
 }
 
-# --- AI Propose: genera propuesta usando opencode ---
+# --- Generate a proposal using opencode AI ---
 ai_propose() {
     instruction="$*"
+
     if [ -z "$instruction" ]; then
-        log "ERROR: instrucción vacía para ai-propose"
-        exit 1
+        handle_error "instruction cannot be empty for ai-propose"
     fi
 
-    # Generar contexto primero
-    log "AI: analizando código fuente..."
+    log "AI: analyzing source code..."
     analyze "$instruction" >/dev/null 2>&1
 
     cycle=$(get_cycle)
     label="CICLO_${cycle}"
-    prop_file="$OUTBOX_DIR/$(make_filename PROPUESTA "$label" "1_0" "DRAFT")"
+    proposal_file="$OUTBOX_DIR/$(make_filename PROPUESTA "$label" "1_0" "DRAFT")"
 
     if ! command -v opencode >/dev/null 2>&1; then
-        log "AI: opencode no disponible, usando template estándar"
+        log "AI: opencode not available, using standard template"
         propose "$instruction"
         return
     fi
@@ -950,32 +934,267 @@ ai_propose() {
         project_context=$(cat "$context_file")
     fi
 
-    prompt="Eres un arquitecto de software para @tienda/api (NestJS + Prisma + PostgreSQL + Redis)."
+    prompt="You are a software architect for @tienda/api (NestJS + Prisma + PostgreSQL + Redis)."
     prompt="$prompt
 
-## Instrucción del usuario
+## User Instruction
 $instruction
 
-## Contexto del proyecto
+## Project Context
 $project_context
 
-## Formato de salida
-Genera un archivo .md con frontmatter YAML y secciones: Análisis, Propuesta, Implicaciones."
+## Output Format
+Generate a .md file with YAML frontmatter and sections: Analysis, Proposal, Implications."
 
-    log "AI: generando propuesta con opencode..."
-    echo "$prompt" | opencode --model big-pickle --quiet > "$prop_file" 2>/dev/null
+    log "AI: generating proposal with opencode..."
+    echo "$prompt" | opencode --model big-pickle --quiet > "$proposal_file" 2>/dev/null
 
-    if [ -f "$prop_file" ] && [ -s "$prop_file" ]; then
-        log "Propuesta generada por IA: $prop_file"
-        set_state "awaiting_review:propuesta:$cycle"
-        echo "$prop_file"
+    if [ -f "$proposal_file" ] && [ -s "$proposal_file" ]; then
+        log "OK: AI proposal generated at $proposal_file"
+        set_state "awaiting_review:proposal:$cycle"
+        output "$proposal_file"
     else
-        log "AI: falló generación, usando template estándar"
+        log "WARN: AI generation failed, falling back to standard template"
         propose "$instruction"
     fi
 }
 
-# --- Main: dispatch recursivo ---
+# ============================================================================
+# LISTEN MODE — Watch inbox directory for new instructions
+# ============================================================================
+listen() {
+    init
+    log "LISTEN: started (PID: $$)"
+    echo "$$" > "$PID_FILE"
+    set_state "listening"
+
+    while true; do
+        for instruction_file in "$INBOX_DIR"/*.md; do
+            [ -f "$instruction_file" ] || continue
+
+            base_name=$(basename "$instruction_file" .md)
+            processing_file="${instruction_file%.md}.processing"
+
+            if mv "$instruction_file" "$processing_file" 2>/dev/null; then
+                log "LISTEN: new instruction detected: $base_name"
+
+                # Extract instruction content from markdown
+                instruction=$(grep -v "^---$" "$processing_file" | \
+                    grep -v "^id:" | grep -v "^type:" | \
+                    grep -v "^actor:" | grep -v "^timestamp:" | \
+                    grep -v "^status:" | grep -v "^tags:" | \
+                    grep -v "^- " | grep -v "^summary:" | \
+                    tail -n +5 2>/dev/null || echo "")
+
+                if [ -z "$instruction" ]; then
+                    instruction=$(tail -n +20 "$processing_file" 2>/dev/null || echo "Instruction from file")
+                fi
+
+                # Recursive: call self to propose
+                log "LISTEN: invoking propose recursively"
+                proposal_file=$("$SCRIPT" propose "$instruction" 2>>"$LOG_FILE")
+
+                if [ -n "$proposal_file" ] && [ -f "$proposal_file" ]; then
+                    log "LISTEN: proposal ready. Waiting for human approval..."
+                    if "$SCRIPT" await-propuesta "$proposal_file" 2>>"$LOG_FILE"; then
+                        log "LISTEN: proposal approved. Generating plan..."
+                        plan_file=$("$SCRIPT" plan "$proposal_file" 2>>"$LOG_FILE")
+
+                        if [ -n "$plan_file" ] && [ -f "$plan_file" ]; then
+                            log "LISTEN: plan ready. Waiting for human approval..."
+                            if "$SCRIPT" await-plan "$plan_file" 2>>"$LOG_FILE"; then
+                                log "LISTEN: plan approved. Executing..."
+                                result_file=$("$SCRIPT" execute "$plan_file" 2>>"$LOG_FILE")
+                                log "LISTEN: execution complete: $result_file"
+                                "$SCRIPT" verify 2>>"$LOG_FILE"
+                                log "LISTEN: cycle completed."
+                            fi
+                        fi
+                    fi
+                fi
+
+                done_file="${processing_file%.processing}.done"
+                mv "$processing_file" "$done_file" 2>/dev/null || true
+                log "LISTEN: instruction processed: $done_file"
+            fi
+        done
+        sleep 5
+    done
+}
+
+# ============================================================================
+# STATUS AND CLEANUP
+# ============================================================================
+
+# --- Display current workflow state ---
+show_status() {
+    output "=== Workflow Status ==="
+    output "PID: $$"
+    output "Script: $SCRIPT"
+    output "Workflow directory: $WORKFLOW_DIR"
+    output "State: $(get_state)"
+    output "Cycle: $(get_cycle)"
+    output ""
+    output "=== Inbox ==="
+    ls -la "$INBOX_DIR" 2>/dev/null || output "(empty)"
+    output ""
+    output "=== Outbox ==="
+    ls -la "$OUTBOX_DIR" 2>/dev/null || output "(empty)"
+    output ""
+    output "=== Recent Log ==="
+    tail -5 "$LOG_FILE" 2>/dev/null || output "(no log)"
+}
+
+# --- Reset workflow state ---
+clean() {
+    log "CLEAN: resetting workflow state..."
+
+    if [ -f "$PID_FILE" ]; then
+        pid=$(cat "$PID_FILE")
+        kill "$pid" 2>/dev/null && log "CLEAN: stopped listener PID $pid" || true
+        rm -f "$PID_FILE"
+    fi
+
+    rm -f "$LOCK_FILE" "$STATE_FILE" "$CYCLE_FILE"
+    echo "idle" > "$STATE_FILE"
+    echo "0" > "$CYCLE_FILE"
+
+    log "OK: state reset to idle, cycle 0"
+    output "Workflow cleaned. State: idle, Cycle: 0"
+}
+
+# --- Reset state and remove all generated files ---
+clean_all() {
+    clean
+    rm -rf "$INBOX_DIR"/* "$OUTBOX_DIR"/* 2>/dev/null
+    log "CLEAN: removed all inbox and outbox files"
+    output "All generated files removed."
+}
+
+# ============================================================================
+# FULL CYCLE — propose → plan → execute → verify
+# ============================================================================
+run_full_cycle() {
+    auto_mode=false
+
+    case "$1" in
+        --auto) auto_mode=true; shift ;;
+    esac
+
+    instruction="$*"
+
+    if [ -z "$instruction" ]; then
+        output "Usage: $0 full [--auto] <instruction>"
+        exit 1
+    fi
+
+    proposal_file=$("$SCRIPT" propose "$instruction")
+
+    if [ "$auto_mode" != "true" ]; then
+        output ""
+        output "═══ Review the proposal ═══"
+        output "  $proposal_file"
+        output ""
+        output "To APPROVE: touch \"${proposal_file}.approve\""
+        output "To REJECT:  touch \"${proposal_file}.reject\""
+        output "Waiting..."
+    fi
+
+    if AUTO_APPROVE="$auto_mode" "$SCRIPT" await-propuesta "$proposal_file"; then
+        plan_file=$("$SCRIPT" plan "$proposal_file")
+
+        if [ "$auto_mode" != "true" ]; then
+            output ""
+            output "═══ Review the plan ═══"
+            output "  $plan_file"
+            output ""
+            output "To APPROVE: touch \"${plan_file}.approve\""
+            output "To REJECT:  touch \"${plan_file}.reject\""
+            output "Waiting..."
+        fi
+
+        if AUTO_APPROVE="$auto_mode" "$SCRIPT" await-plan "$plan_file"; then
+            output ""
+            output "═══ Executing plan ═══"
+            "$SCRIPT" execute "$plan_file"
+            output ""
+            output "═══ Verifying ═══"
+            "$SCRIPT" verify
+            output ""
+            output "Cycle complete."
+        else
+            output "Plan rejected. Cycle aborted."
+        fi
+    else
+        output "Proposal rejected. Cycle aborted."
+    fi
+}
+
+# ============================================================================
+# HELP
+# ============================================================================
+show_help() {
+    cat <<-EOF
+workflow.sh — Programming Flow Automation Script
+=================================================
+
+PURPOSE:
+  Automates the software development workflow using AI agents.
+  Follows "everything is a file" -- instructions, proposals, plans,
+  state, and approvals are all files on disk.
+
+CORE CYCLE:
+  Instruction -> Proposal -> Approval -> Plan -> Approval -> Execution -> Verification
+
+FILES:
+  .workflow/inbox/*.md           Instructions (drop .md files here)
+  .workflow/outbox/*_PROPUESTA_*.md  Generated proposals
+  .workflow/outbox/*_PLAN_*.md       Generated plans
+  .workflow/outbox/*_RESULTADO_*.md  Execution results
+  .workflow/state                 Current workflow state
+  .workflow/cycle                 Current cycle number
+  touch <file>.approve            Approve a proposal or plan
+  touch <file>.reject             Reject a proposal or plan
+
+MODES:
+  full [--auto] <instruction>     Complete cycle (propose -> plan -> execute -> verify)
+  analyze <text>                  Scan source code, generate context in .workflow/context.md
+  ai <text>                       Generate proposal using opencode with project context
+  propose <text>                  Step 1-2: Generate proposal from instruction
+  plan <proposal-file>            Step 4-5: Generate plan from approved proposal
+  execute <plan-file>             Step 7-8: Execute plan step by step
+  verify                          Step 9:   Run validations and generate report
+  listen                          Watch inbox/ for new instructions (background mode)
+  status                          Show current workflow state
+  train naming '<pattern>'        Set file naming pattern
+  train example <file> [result]   Register training example
+  train list                      List all training examples
+  train show <id>                 Show a specific training example
+  clean                           Reset workflow state
+  clean-all                       Reset state and remove all generated files
+  help                            Show this help message
+
+ENVIRONMENT FLAGS:
+  DRY_RUN=true                 Preview commands without executing
+  CONTINUE_ON_ERROR=true       Continue execution after step failure
+  AUTO_APPROVE=true            Auto-approve without human intervention
+
+EXAMPLES:
+  ./workflow.sh full --auto "Create a notification module in NestJS"
+  DRY_RUN=true ./workflow.sh execute <plan-file>
+  ./workflow.sh full --auto "Add a GET /health/detailed endpoint"
+  ./workflow.sh listen &                       # Start listener in background
+  echo 'My idea' > .workflow/inbox/my-idea.md  # Send instruction to listener
+
+FILE NAMING PATTERN:
+  Default: {type}_{label}_v1_0_{state}.md
+  Custom:  ./workflow.sh train naming '{type}_{module}_{label}_v{version}_{state}.md'
+EOF
+}
+
+# ============================================================================
+# MAIN DISPATCH
+# ============================================================================
 main() {
     init
 
@@ -985,7 +1204,7 @@ main() {
             propose "$*"
             ;;
         await-propuesta)
-            await_propuesta_approval "$2" "$(get_cycle)"
+            await_proposal_approval "$2" "$(get_cycle)"
             ;;
         await-plan)
             await_plan_approval "$2" "$(get_cycle)"
@@ -1024,108 +1243,15 @@ main() {
             ai_propose "$*"
             ;;
         full)
-            # Ciclo completo desde TUI: propose → wait → plan → wait → execute → verify
             shift
-            auto_mode=false
-            case "$1" in
-                --auto) auto_mode=true; shift ;;
-            esac
-            instruction="$*"
-            if [ -z "$instruction" ]; then
-                echo "Uso: $0 full [--auto] <instrucción>"
-                exit 1
-            fi
-
-            prop_file=$("$SCRIPT" propose "$instruction")
-
-            if [ "$auto_mode" != "true" ]; then
-                echo ""
-                echo "═══ Revisa la propuesta ═══"
-                echo "  $prop_file"
-                echo ""
-                echo "Para ACEPTAR: touch \"${prop_file}.approve\""
-                echo "Para RECHAZAR: touch \"${prop_file}.reject\""
-                echo "Esperando..."
-            fi
-
-            if AUTO_APPROVE="$auto_mode" "$SCRIPT" await-propuesta "$prop_file"; then
-                plan_file=$("$SCRIPT" plan "$prop_file")
-
-                if [ "$auto_mode" != "true" ]; then
-                    echo ""
-                    echo "═══ Revisa el plan ═══"
-                    echo "  $plan_file"
-                    echo ""
-                    echo "Para ACEPTAR: touch \"${plan_file}.approve\""
-                    echo "Para RECHAZAR: touch \"${plan_file}.reject\""
-                    echo "Esperando..."
-                fi
-
-                if AUTO_APPROVE="$auto_mode" "$SCRIPT" await-plan "$plan_file"; then
-                    echo ""
-                    echo "═══ Ejecutando plan ═══"
-                    "$SCRIPT" execute "$plan_file"
-                    echo ""
-                    echo "═══ Verificando ═══"
-                    "$SCRIPT" verify
-                    echo ""
-                    echo "Ciclo completo."
-                else
-                    echo "Plan rechazado. Ciclo abortado."
-                fi
-            else
-                echo "Propuesta rechazada. Ciclo abortado."
-            fi
+            run_full_cycle "$@"
             ;;
         help|--help|-h)
-            echo "workflow.sh — Algoritmo de flujo de programación con agentes IA"
-            echo ""
-            echo "Filosofía: Everything is a file"
-            echo "  - Instrucciones  → .workflow/inbox/*.md"
-            echo "  - Propuestas     → .workflow/outbox/*_PROPUESTA_*.md"
-            echo "  - Planes         → .workflow/outbox/*_PLAN_*.md"
-            echo "  - Resultados     → .workflow/outbox/*_RESULTADO_*.md"
-            echo "  - Estado         → .workflow/state"
-            echo "  - Aprobaciones   → touch <archivo>.approve / .reject"
-            echo ""
-            echo "Recursivo: se invoca a sí mismo para cada paso del ciclo."
-            echo ""
-            echo "Modos:"
-            echo "  $0 full [--auto] <instrucción>     Ciclo completo (propuesta→plan→ejecución→verificación)"
-            echo "  $0 analyze <texto>              Escanea código fuente y genera contexto en .workflow/context.md"
-            echo "  $0 ai <texto>                   Genera propuesta usando opencode con contexto del proyecto"
-            echo "  $0 propose <texto>              Paso 1-2: genera propuesta desde instrucción"
-            echo "  $0 plan <ruta-propuesta>        Paso 4-5: genera plan desde propuesta"
-            echo "  $0 execute <ruta-plan>          Paso 7-8: ejecuta plan"
-            echo "  $0 verify                       Paso 9: ejecuta validaciones y reporta"
-            echo "  $0 listen                       Modo escucha: procesa archivos .md en inbox/"
-            echo "  $0 status                       Muestra estado actual"
-            echo "  $0 train naming '<patrón>'     Entrena nomenclatura de archivos"
-            echo "  $0 train example <archivo> [resultado]  Registra ejemplo de entrenamiento"
-            echo "  $0 train list                   Lista ejemplos registrados"
-            echo "  $0 train show <id>              Muestra un ejemplo por ID"
-            echo "  $0 clean                        Limpia estado"
-            echo "  $0 clean-all                    Limpia estado + archivos generados"
-            echo ""
-            echo "Flags de entorno:"
-            echo "  DRY_RUN=true                    Muestra comandos sin ejecutarlos"
-            echo "  CONTINUE_ON_ERROR=true           Continua aunque un paso falle"
-            echo "  AUTO_APPROVE=true                Auto-aprueba sin intervención humana"
-            echo ""
-            echo "Aprobación humana:"
-            echo "  touch <archivo>.approve   — ACEPTAR"
-            echo "  touch <archivo>.reject    — RECHAZAR"
-            echo ""
-            echo "Ejemplos:"
-            echo "  $0 full --auto 'Crea un módulo de notificaciones en NestJS'"
-            echo "  DRY_RUN=true $0 execute <plan>"
-            echo "  $0 full --auto 'Agrega un endpoint GET /health/detailed'"
-            echo "  $0 listen &               # Inicia listener en background"
-            echo "  echo 'Mi idea' > .workflow/inbox/mi-idea.md  # Enviar instrucción"
+            show_help
             ;;
         *)
-            echo "Modo desconocido: $1"
-            echo "Usa: $0 help"
+            output "Unknown mode: $1"
+            output "Usage: $0 help"
             exit 1
             ;;
     esac

@@ -9,6 +9,8 @@
     "build": "npm run build:api && npm run build:web",
     "dev:api": "cd apps/api && npm run start:dev",
     "dev:web": "cd apps/web && npm run dev",
+    "dev:server": "cd apps/server && npm run dev",
+    "build:server": "cd apps/server && npm run build",
     "start:prod": "cd apps/api && npm run start:prod",
     "test": "cd apps/api && npm test",
     "test:watch": "cd apps/api && npm run test:watch",

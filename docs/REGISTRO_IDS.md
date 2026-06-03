@@ -21,6 +21,11 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 001 | `001_ARCH_SYSTEM_OVERVIEW_1_0_DRAFT.md`    | architecture | ARCH | DRAFT  | 2026-05-23 |
 | 042 | `042_ARCH_MONOREPO_STRUCTURE_1_0_DRAFT.md` | architecture | ARCH | DRAFT  | 2026-06-01 |
 | 043 | `043_EXEC_MONOREPO_MIGRATION_1_0_DRAFT.md` | architecture | EXEC | DRAFT  | 2026-06-02 |
+| 045 | `045_EXEC_MONOREPO_CI_CD_1_0_DRAFT.md`     | architecture | EXEC | DRAFT  | 2026-06-03 |
+| 046 | `046_EXEC_MONOREPO_DB_1_0_DRAFT.md`        | architecture | EXEC | DRAFT  | 2026-06-03 |
+| 047 | `047_EXEC_MONOREPO_REDIS_1_0_DRAFT.md`     | architecture | EXEC | DRAFT  | 2026-06-03 |
+| 048 | `048_EXEC_VARIABLES_ENTORNO_1_0_DRAFT.md` | architecture | EXEC | DRAFT  | 2026-06-03 |
+| 049 | `049_EXEC_DEPLOY_VERCEL_1_0_DRAFT.md`     | architecture | EXEC | DRAFT  | 2026-06-03 |
 
 ## DB (Database)
 
@@ -83,6 +88,8 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 027 | `027_DEV_PLAN_ARTIFACTS_1_0_DRAFT.md`                  | dev  | PLAN      | DRAFT  | 2026-05-31 |
 | 029 | `029_EXEC_BUILD_AGENTS_1_0_DRAFT.md`                   | dev  | EXEC      | DRAFT  | 2026-05-31 |
 | 030 | `030_DEV_REFERENCE_AGENT_AUTOIMPROVEMENT_1_0_DRAFT.md` | dev  | REFERENCE | DRAFT  | 2026-05-31 |
+| 034 | `034_EXEC_PLAN_PROMPT_COMPILER_1_0_DRAFT.md`           | dev  | EXEC      | DRAFT  | 2026-06-02 |
+| 044 | `044_DEV_GUIDE_SHELL_STYLE_1_0_DRAFT.md`                | dev  | GUIDE     | DRAFT  | 2026-06-02 |
 
 ## Frontend
 
@@ -117,6 +124,7 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | —   | `produccion-algoritmo.md`               | algorithms | ALG       | DRAFT  | 2026-05-30 |
 | —   | `propuesta-convencion-documentacion.md` | algorithms | PROPUESTA | DRAFT  | 2026-05-30 |
 | —   | `flujo-programacion-agentes.md`         | algorithms | ALGP      | DRAFT  | 2026-05-30 |
+| ALGP005 | `ALGP005_WORKFLOW_OS_ARCH_v1_0_DRAFT.md`         | algorithms | ALGP      | DRAFT  | 2026-06-02 |
 
 ---
 
