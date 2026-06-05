@@ -25,7 +25,9 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 046 | `046_EXEC_MONOREPO_DB_1_0_DRAFT.md`        | architecture | EXEC | DRAFT  | 2026-06-03 |
 | 047 | `047_EXEC_MONOREPO_REDIS_1_0_DRAFT.md`     | architecture | EXEC | DRAFT  | 2026-06-03 |
 | 048 | `048_EXEC_VARIABLES_ENTORNO_1_0_DRAFT.md` | architecture | EXEC | DRAFT  | 2026-06-03 |
-| 049 | `049_EXEC_DEPLOY_VERCEL_1_0_DRAFT.md`     | architecture | EXEC | DRAFT  | 2026-06-03 |
+| 049 | `049_EXEC_DEPLOY_VERCEL_1_0_DRAFT.md`     | architecture | EXEC | ACTIVE | 2026-06-03 |
+| 050 | `050_EXEC_PLAN_MONOREPO_VERCEL_DEPLoY_1_0_DRAFT.md` | architecture | EXEC | DRAFT | 2026-06-03 |
+| 051 | `051_DEBUG_DEPLOY_VERCEL_1_0_DRAFT.md`  | architecture | DEBUG | DRAFT  | 2026-06-03 |
 
 ## DB (Database)
 
@@ -120,6 +122,7 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 
 | ID  | Archivo                                 | Área       | Tipo      | Estado | Creado     |
 | --- | --------------------------------------- | ---------- | --------- | ------ | ---------- |
+| 053 | `053_WORKSTATION_OS_ARCH_PLAN_1_0_DRAFT.md` | infra | PLAN | DRAFT | 2026-06-04 |
 | —   | `produccion-plan.md`                    | algorithms | ALG       | DRAFT  | 2026-05-30 |
 | —   | `produccion-algoritmo.md`               | algorithms | ALG       | DRAFT  | 2026-05-30 |
 | —   | `propuesta-convencion-documentacion.md` | algorithms | PROPUESTA | DRAFT  | 2026-05-30 |
@@ -127,6 +130,17 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | ALGP005 | `ALGP005_WORKFLOW_OS_ARCH_v1_0_DRAFT.md`         | algorithms | ALGP      | DRAFT  | 2026-06-02 |
 
 ---
+
+## CHATBOT
+
+| ID  | Archivo                                                        | Área    | Tipo | Estado | Creado     |
+| --- | -------------------------------------------------------------- | ------- | ---- | ------ | ---------- |
+| 002 | `002_CHATBOT_SPEC_TIENDA_ONLINE_ACTIVE.md`                    | chatbot | SPEC | ACTIVE | 2026-05-31 |
+| 003 | `003_CHATBOT_FLOW_TIENDA_ONLINE_ACTIVE.md`                    | chatbot | FLOW | ACTIVE | 2026-05-31 |
+| 004 | `004_CHATBOT_ALGORITHM_TIENDA_ONLINE_ACTIVE.md`               | chatbot | ALGO | ACTIVE | 2026-05-31 |
+| 005 | `005_CHATBOT_IMPLEMENTATION_ACTIONS_1_0_ACTIVE.md`            | chatbot | EXEC | ACTIVE | 2026-05-31 |
+| 052 | `052_EXEC_BOT_WAVES_1_0_DRAFT.md`                             | chatbot | EXEC | ACTIVE | 2026-06-04 |
+| 054 | `054_EXEC_BOT_WAVES_WAVE2_1_0_DRAFT.md`                      | chatbot | EXEC | DRAFT  | 2026-06-04 |
 
 ## Reglas
 

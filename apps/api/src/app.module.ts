@@ -10,6 +10,7 @@ import { AuthModule } from "./auth/auth.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { PermissionsGuard } from "./auth/guards/permissions.guard";
 import { RolesGuard } from "./auth/guards/roles.guard";
+import { BotModule } from "./bot/bot.module";
 import { CartModule } from "./cart/cart.module";
 import { CatalogModule } from "./catalog/catalog.module";
 import { CheckoutModule } from "./checkout/checkout.module";
@@ -56,6 +57,7 @@ import { UsersModule } from "./users/users.module";
     OrdersModule,
     PaymentsModule,
     AdminModule,
+    BotModule,
   ],
   providers: [
     {

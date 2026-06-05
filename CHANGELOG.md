@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Bot Wave 2: Microservicio Python HTTP + proxy NestJS
+  - `bot/tienda-online-support-bot/server.py`: entrypoint HTTP con stdlib (http.server), endpoints `POST /messages`, `POST /confirm`, `GET /health`, CORS, reutiliza BotService existente sin modificar
+  - `bot/tienda-online-support-bot/requirements.txt`: sin dependencias externas
+  - `apps/api/src/bot/bot.module.ts`: BotModule con HttpModule, importado en AppModule
+  - `apps/api/src/bot/bot.controller.ts`: `POST /bot/messages`, `POST /bot/confirm`, `GET /bot/status` (público)
+  - `apps/api/src/bot/bot.service.ts`: proxy HTTP al microservicio Python, validación de JWT reenviada, manejo de errores con 503
+  - `apps/api/src/bot/dto/message-request.dto.ts`, `confirm-request.dto.ts`, `bot-response.dto.ts`: DTOs con class-validator + Swagger
+  - `apps/api/src/bot/config/bot.config.ts`: configuración via `BOT_SERVICE_URL`, `BOT_ENABLED`
+  - `apps/api/src/bot/bot.controller.spec.ts` (3 tests) + `bot.service.spec.ts` (9 tests)
+  - Razón: convertir el prototipo CLI Python en microservicio HTTP integrable con el backend NestJS para el bot de soporte B2B
+  - Arquitectura: microservicio Python independiente con stdlib HTTP + proxy NestJS delgado que valida JWT y reenvía contexto de usuario
+  - Prueba manual: 5 casos (health, mensaje público, mensaje admin, confirmación, 404) verificados contra el microservicio Python
+
 - Monorepo migration: estructura de proyecto plana → `apps/api/` (NestJS backend) + `apps/web/` (Vite + React frontend)
   - `apps/api/package.json`: dependencias backend NestJS con scripts de build, test y Prisma
   - `apps/api/vercel.json`: configuración de build Vercel para API
@@ -347,6 +360,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `apps/api/src/redis/upstash-client.ts`: agregado `return await` en métodos `set()` y `del()` para que errores sean capturados por el try/catch envolvente (antes el return sin await escapaba la excepción)
 - `apps/api/test/*.e2e-spec.ts` (7 archivos): fix import de supertest — cambiado de `import * as request from 'supertest'` a `import request from 'supertest'` para compatibilidad con módulos ES
+
+- `vercel.json`: corrige error 404 en todas las rutas del SPA en deploy de producción — agregado `@vercel/static` al array `builds` para incluir archivos estáticos (`apps/web/dist/**`), corregido rewrite `/(.*)` para que apunte a `/apps/web/dist/index.html` (antes apuntaba a `/index.html` que no existía), y agregado rewrite `/assets/(.*)` → `/apps/web/dist/assets/$1` para servir assets estáticos
+  - Causa raíz: el array `builds` legacy solo desplegaba serverless functions, los archivos estáticos del SPA no se incluían en el deployment, y el rewrite apuntaba a `/index.html` en lugar de `/apps/web/dist/index.html`
+  - Solución: `@vercel/static` despliega los archivos del directorio especificado y los rewrites corregidos apuntan a la ruta completa donde se despliegan
+  - URL de producción verificada: `https://tienda-online-jair08-zped08s-projects.vercel.app` — `GET /` retorna HTML del SPA (antes 404), `GET /_health` → 200, `GET /api/v1/health` → 200 (DB ok, Redis ok)
+
+### Added
+
+- `docs/monorepo/051_DEBUG_DEPLOY_VERCEL_1_0_DRAFT.md`: documento de debugging que compila diagnóstico, causa raíz y soluciones aplicadas para el error 404 en deploy Vercel del monorepo
 
 ---
 

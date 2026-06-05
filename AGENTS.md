@@ -127,8 +127,11 @@ GitHub Actions workflow in `.github/workflows/ci.yml`:
 
 ## Production URLs
 
-- **Backend API**: `https://tienda-online-zped08s-projects.vercel.app` (prefix `/api/v1`)
-- **Frontend SPA**: `https://tienda-frontend-self.vercel.app`
+- **Aplicación unificada**: `https://tienda-online-jair08-zped08s-projects.vercel.app`
+  - API Backend: `https://tienda-online-jair08-zped08s-projects.vercel.app/api/v1`
+  - Frontend SPA: `https://tienda-online-jair08-zped08s-projects.vercel.app/`
+- **Health check rápido**: `https://tienda-online-jair08-zped08s-projects.vercel.app/_health`
+- **Health check completo**: `https://tienda-online-jair08-zped08s-projects.vercel.app/api/v1/health`
 
 ## Package identity
 

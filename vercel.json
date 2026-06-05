@@ -4,6 +4,10 @@
   "outputDirectory": "apps/web/dist",
   "builds": [
     {
+      "src": "apps/web/dist/**",
+      "use": "@vercel/static"
+    },
+    {
       "src": "apps/api/api/diagnostic.js",
       "use": "@vercel/node"
     },
@@ -34,8 +38,12 @@
       "destination": "apps/api/api/index.js"
     },
     {
+      "source": "/assets/(.*)",
+      "destination": "/apps/web/dist/assets/$1"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/apps/web/dist/index.html"
     }
   ],
   "headers": [

@@ -4,7 +4,7 @@ area: architecture
 type: EXEC
 module: monorepo
 version: 1.0
-status: DRAFT
+status: ACTIVE
 tags:
   - monorepo
   - vercel
@@ -27,6 +27,10 @@ changelog:
     date: 2026-06-03
     author: vercel-deploy-agent
     description: Creacion del reporte de Fase 6 — Deploy en Vercel
+  - version: 1.1
+    date: 2026-06-03
+    author: workflow-agent
+    description: Deploy exitoso — fix 404 agregando @vercel/static y corrigiendo rewrites a /apps/web/dist/index.html
 ---
 
 # Fase 6: Deploy en Vercel — @tienda/api

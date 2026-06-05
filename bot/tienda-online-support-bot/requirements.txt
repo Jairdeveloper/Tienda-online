@@ -1,0 +1,2 @@
+# Sin dependencias externas — stdlib http.server es suficiente para el MVP.
+# FastAPI/Flask se puede agregar en Wave 3+ si es necesario.

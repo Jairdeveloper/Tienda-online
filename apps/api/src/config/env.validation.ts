@@ -33,6 +33,8 @@ export const validationSchema = Joi.object({
     then: Joi.string().min(1).required(),
     otherwise: Joi.string().allow("").default(""),
   }),
+  BOT_SERVICE_URL: Joi.string().uri().default("http://localhost:8000"),
+  BOT_ENABLED: Joi.string().valid("true", "false", "1", "0").default("true"),
   WEBHOOK_SECRET: Joi.string()
     .min(16)
     .when("NODE_ENV", {
