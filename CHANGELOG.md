@@ -9,7 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Build Vercel: lockfile mismatch en `apps/api/` por `@nestjs/axios` sin resolver en `package-lock.json`
+  - `package.json` (raíz): eliminado `"dependencies": {"@nestjs/axios": "^4.0.1"}` — root no debe tener dependencias
+  - `apps/api/package.json`: version `@nestjs/axios` de `^4.0.0` a `^4.0.1`
+  - `apps/api/package-lock.json`: resuelta dependencia `@nestjs/axios` y sus transitivas (axios, follow-redirects, https-proxy-agent, proxy-from-env, agent-base)
+  - Razón: el commit `03eccd0` añadió `@nestjs/axios` a `package.json` pero nunca se ejecutó `npm install` dentro de `apps/api/`, dejando el lockfile desincronizado. En Vercel, `npm ci` fallaba porque exige coincidencia exacta entre `package.json` y `package-lock.json`. Al fallar la instalación, se rompía la cadena completa del build y no se producía `apps/web/dist/`, causando error 404 en todas las rutas.
+
 ### Added
+
+- Agent Orchestrator: nuevo agente de orquestación de flujo de datos entre agentes
+  - `.opencode/agents/agent-orchestrator.md`: agente que gestiona pipelines multi-agente, transforma datos entre pasos, cachea resultados intermedios, maneja errores (retry/skip/abort/fallback) y provee trazabilidad completa
+  - `docs/ai/055_PRM_AGENT_ORCHESTRATOR_1_0_DRAFT.md`: plan de implementación del agente de orquestación
+  - `docs/ai/056_EXEC_AGENT_ORCHESTRATOR_1_0_DRAFT.md`: plan de ejecución detallado con 6 pasos concretos
+  - `docs/REGISTRO_IDS.md`: registrados IDs 055 (PRM) y 056 (EXEC)
+  - `.opencode/agents/workflow-agent.md`: actualizada tabla de jerarquía (Agente 14) y árbol de decisión (nuevo nodo de pipeline multi-agente)
+  - `.workflow/pipeline-cache/`: directorio para almacenar resultados intermedios de pipelines
+  - Razón: formalizar la orquestación de flujo de datos entre agentes, permitiendo pipelines multi-agente reutilizables con caché, trazabilidad y manejo de errores configurable
 
 - Bot Wave 2: Microservicio Python HTTP + proxy NestJS
   - `bot/tienda-online-support-bot/server.py`: entrypoint HTTP con stdlib (http.server), endpoints `POST /messages`, `POST /confirm`, `GET /health`, CORS, reutiliza BotService existente sin modificar
