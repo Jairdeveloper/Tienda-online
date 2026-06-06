@@ -60,9 +60,9 @@ module.exports = async (req, res) => {
   log("DATABASE_URL_SET:", !!process.env.DATABASE_URL);
   log("REDIS_URL_SET:", !!process.env.REDIS_URL);
 
-  if (req.url === "/api/v1/direct-bot-status") {
+  if (req.url === "/api/v1/bot/status") {
     res.setHeader("content-type", "application/json");
-    return res.end(JSON.stringify({ status: "ok", service: "direct-bot", version: "DIRECT-001" }));
+    return res.end(JSON.stringify({ status: "ok", service: "bot", version: "DIRECT-001" }));
   }
 
   try {
