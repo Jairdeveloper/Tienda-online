@@ -1,6 +1,13 @@
 const path = require("path");
 const __basedir = path.resolve(__dirname, "..");
 
+// Force Prisma to use library engine (WASM) instead of native binary.
+// MUST be set before any NestJS/Prisma imports to prevent SEGFAULT
+// in Lambda (FUNCTION_INVOCATION_FAILED).
+if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
+  process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
+}
+
 // Static require for Vercel nft tracing — nft only traces string literals
 // Without this, dist/main.js won't be included in the Lambda (500 load_failed)
 try { require("../dist/main"); } catch (_) {}

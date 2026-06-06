@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **FUNCTION_INVOCATION_FAILED en producción — Prisma engine nativo crashea Lambda**: El engine binario nativo de Prisma (`query-engine`) causa un segfault (SIGSEGV/SIGABRT) en el entorno Vercel Lambda, resultando en `FUNCTION_INVOCATION_FAILED` en `/api/v1/health` y cualquier endpoint que requiera inicialización de NestJS. El crash ocurría durante `NestFactory.create(AppModule)` → `PrismaService.onModuleInit()` → `this.$connect()`.
+  - `apps/api/src/prisma/prisma.service.ts`: 
+    - Se fuerza `PRISMA_CLIENT_ENGINE_TYPE=library` (engine WASM/library en vez de binario nativo) previniendo segfaults en Lambda
+    - Se elimina `$connect()` de `onModuleInit()` — conexión lazy, diferida al primer query real
+    - Se agrega try-catch en el constructor de PrismaClient con logging descriptivo
+  - `apps/api/api/index.js`: Se agrega `PRISMA_CLIENT_ENGINE_TYPE=library` antes de cualquier require de NestJS como safety net bootstrap
+  - Root cause: El engine binario nativo de Prisma no es compatible con el entorno serverless de Vercel Lambda
+
 - BotService DI crash on Vercel: BotService constructor had `config: ConfigType<typeof botConfig>` parameter without `@Inject(botConfig.KEY)` decorator, causing NestJS `UndefinedDependencyException` during provider instantiation. This crashed the Vercel Lambda with `FUNCTION_INVOCATION_FAILED` because the error was unhandled.
   - `apps/api/src/bot/bot.service.ts`: added `@Inject(botConfig.KEY)` decorator to config parameter
   - Root cause: missing `@Inject()` on config namespace injection

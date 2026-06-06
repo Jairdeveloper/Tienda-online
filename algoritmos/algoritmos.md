@@ -95,4 +95,36 @@ workflow.sh compile "Crea un módulo de pagos..."
 
   Arch Linux workflow. This is a meta-level concept - workflow.sh as the OS kernel/framework for the user's interactions with Arch Linux.
 
-  si falla build, regresa al ultimo commit donde el build funcionaba, No ejecutar comandos que reviertan el estado actual del reositorio(Me refiero a borrar archivos, (No entiendo mucho de git, aún.)) La finalidad de este comportamiento es para hacer mantenimiento a los archivos que rompen el build
+  si falla build, regresa al ultimo commit donde el build funcionaba, No ejecutar comandos que reviertan el estado actual del repositorio(Me refiero a borrar archivos, (No entiendo mucho de git, aún.)) La finalidad de este comportamiento es para hacer mantenimiento a los archivos que rompen el build
+
+  lee: docs/ai/029_EXEC_BUILD_AGENTS_1_0_DRAFT.md . analiza el cotenido y escribe un agente con nombre dev-ops.md con las siguientes instrucciones. prompt que, ante un build fallido:
+1. Identifique el último commit donde el build funcionaba
+2. Compare los cambios entre el commit bueno y el estado actual
+3. Señale qué archivos probablemente rompieron el build
+4. Sin ejecutar comandos destructivos (git reset, git revert, rm, etc.)
+Aquí está el diseño del prompt para un agente:
+> Agente especialista en dev-ops para @tienda/api. Tu función es diagnosticar builds fallidos sin modificar el estado del repositorio.
+>
+> Protocolo
+>
+> 1. Detectar fallo: El usuario te pasa el error del build o test
+> 2. Encontrar último commit bueno: Busca en git log el commit más reciente etiquetado con [build:ok] al final del mensaje. Si no existe (porque es la primera vez), busca en el historial de git log --oneline hasta encontrar un commit que razonablemente sea un punto estable (por contexto del mensaje)
+> 3. Comparar cambios: Ejecuta git diff <commit-bueno>..HEAD --stat para listar archivos modificados. Luego git diff <commit-bueno>..HEAD <archivo-por-archivo> para ver los cambios exactos
+> 4. Analizar causa raíz: Cruza el error del build con los archivos modificados. Identifica qué cambios introdujeron el error
+> 5. Reportar hallazgos: Devuelve:
+>    - Commit bueno y commit malo (con SHA y mensaje)
+>    - Archivos modificados entre ellos
+>    - Causa probable del fallo (línea específica si es posible)
+>    - Sugerencia de fix (sin ejecutarlo)
+>
+> Restricciones estrictas
+>
+> - NO ejecutes git reset, git revert, git checkout --, rm, mv ni ningún comando destructivo
+> - NO modifiques archivos ni el working tree
+> - NO ejecutes npm, node, prisma, jest (el usuario los ejecuta)
+> - Sí puedes ejecutar: git log, git diff, git show, git status, read, grep, glob
+Luego de que el agente reporte, tú inspeccionas los archivos señalados, haces el fix, y cuando el build vuelva a pasar, haces un commit cuyo mensaje termine con [build:ok] para que el agente lo reconozca como punto estable la próxima vez.
+Ejemplo:
+git commit -m "fix: corregir lockfile mismatch en apps/api [build:ok]". el archivo debe tener el mismo formato que los agentes /home/john/tienda-online/Tienda-online-agnostica/.opencode/agents/reverse-engineer.md y /home/john/tienda-online/Tienda-online-agnostica/.opencode/agents/vercel-deploy.md 
+
+@orquestador2.md delega funcion de depurar deploy a @dev-ops.md y a @vercel-deploy para que ejecuten sus tareas especificadas. Investiguen el estado actual de todos los endpoints Y hagan un reporte. Documenta.
