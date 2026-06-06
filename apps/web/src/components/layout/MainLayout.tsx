@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { AuthProvider } from "../../contexts/AuthContext";
+import ChatWidget from "../bot/ChatWidget";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
@@ -38,6 +39,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <main className="flex-1">{children}</main>
         <Footer />
       </div>
+      <ChatWidget />
     </AuthProvider>
   );
 }

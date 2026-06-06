@@ -62,7 +62,7 @@ class BotService:
             self.session_store.save(state)
             return self._request_confirmation(state, intent, action, context, request_id)
 
-        result = self.tools.execute_read_or_answer(action, context)
+        result = self.tools.execute_read_or_answer(action, context, state.user)
         reply = self._compose_answer(intent, context, result)
         return self._finalize(state, intent, context, reply, request_id, result)
 
@@ -90,7 +90,7 @@ class BotService:
             self.session_store.save(state)
             return self._plain_response(state, "Accion cancelada.", "bot.confirm.cancelled", request_id)
 
-        result = self.tools.execute_mutation(action)
+        result = self.tools.execute_mutation(action, state.user)
         state.pending_action = None
         state.audit_trace.append({"requestId": request_id, "action": action.action_name, "result": result})
         self.session_store.save(state)
@@ -99,10 +99,18 @@ class BotService:
     def _load_state(self, request: dict[str, Any]) -> BotState:
         session_id = str(request.get("sessionId") or "anonymous")
         state = self.session_store.load_or_create(session_id)
-        user = self.auth_resolver.resolve(request.get("authorization"))
-        state.user = user
-        state.roles = user.roles
-        state.permissions = user.permissions
+        # Priorizar user context del proxy NestJS sobre resolucion local
+        user_data = request.get("user")
+        if user_data:
+            state.user = self.auth_resolver.resolve_from_context(user_data)
+        else:
+            state.user = self.auth_resolver.resolve(request.get("authorization"))
+        # Almacenar token JWT crudo para forwarding a API NestJS
+        auth_header = request.get("authorization", "")
+        if auth_header and not state.user.token:
+            state.user.token = auth_header.removeprefix("Bearer ").strip()
+        state.roles = state.user.roles
+        state.permissions = state.user.permissions
         state.channel = CHANNEL
         return state
 

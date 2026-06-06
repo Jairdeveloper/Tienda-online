@@ -14,7 +14,26 @@ class AuthResolver:
     - Bearer demo-admin
     - Bearer demo-customer
     - Bearer <jwt>, decoded without signature validation for scaffolding only.
+
+    Also accepts pre-resolved user context from NestJS proxy (Wave 3).
     """
+
+    def resolve_from_context(self, user_data: dict | None) -> User:
+        """Create a User from pre-resolved user context (sent by NestJS proxy).
+
+        This is the preferred path in production: the proxy validates the JWT
+        and sends the resolved user data directly to the Python microservice.
+        """
+        if not user_data:
+            return User(id=None, email=None, is_anonymous=True)
+        return User(
+            id=str(user_data.get("id", "")),
+            email=user_data.get("email"),
+            roles=list(user_data.get("roles", [])),
+            permissions=list(user_data.get("permissions", [])),
+            is_anonymous=False,
+            token=user_data.get("token"),
+        )
 
     def resolve(self, authorization: str | None) -> User:
         if not authorization:

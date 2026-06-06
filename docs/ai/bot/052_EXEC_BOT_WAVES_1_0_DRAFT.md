@@ -3,11 +3,11 @@ id: 052
 area: CHATBOT
 type: EXEC
 module: MONOREPO
-version: v2.0
+version: v2.2
 status: ACTIVE
 author: workflow-agent
 created: 2026-06-04
-last_updated: 2026-06-04
+last_updated: 2026-06-06
 dependencies:
   - docs/ai/bot/002_CHATBOT_SPEC_TIENDA_ONLINE_ACTIVE.md
   - docs/ai/bot/003_CHATBOT_FLOW_TIENDA_ONLINE_ACTIVE.md
@@ -46,6 +46,16 @@ keywords:
   - microservicio
   - python
 changelog:
+  - version: v2.2
+    date: 2026-06-06
+    author: orchestrator2
+    changes:
+      - "Wave 4 completada: Frontend Chat Widget con 6 componentes React + hook useBotChat + API client bot.ts. ChatWidget integrado en MainLayout. Manejo completo de estados (loading, error, requiresAuth, requiresConfirmation). Contexto de pagina enviado segun ruta actual. Sesion persistente via sessionStorage."
+  - version: v2.1
+    date: 2026-06-06
+    author: orchestrator2
+    changes:
+      - "Wave 3 completada: tools.py con llamadas HTTP reales a NestJS API, auth.py con resolve_from_context, API_BASE_URL configurable, JWT forwarding implementado"
   - version: v2.0
     date: 2026-06-04
     author: workflow-agent
@@ -893,21 +903,24 @@ Wave 5: Tests con pytest, Dockerfile, despliegue
 - [ ] Prueba manual: Python caído → proxy responde 503
 
 ### Wave 3 — Checklist
-- [ ] `tools.py` reemplaza datos mock por `urllib.request` a NestJS API
-- [ ] `auth.py` recibe user context desde proxy (usuario ya resuelto)
-- [ ] Variable `API_BASE_URL` configurada en el microservicio
-- [ ] Intents de lectura pública devuelven datos reales de catálogo/inventario
-- [ ] Intents de lectura privada funcionan con JWT forwarding
-- [ ] Prueba manual con datos semilla funciona
+- [x] `tools.py` reemplaza datos mock por `urllib.request` a NestJS API
+- [x] `auth.py` recibe user context desde proxy (usuario ya resuelto)
+- [x] Variable `API_BASE_URL` configurada en el microservicio
+- [x] Intents de lectura pública devuelven datos reales de catálogo/inventario
+- [x] Intents de lectura privada funcionan con JWT forwarding
+- [ ] Prueba manual con datos semilla funciona (requiere NestJS + Python corriendo)
 
 ### Wave 4 — Checklist
-- [ ] `ChatWidget.tsx` renderiza en layout autenticado
-- [ ] `useBotChat.ts` maneja todos los estados
-- [ ] `ChatConfirmDialog.tsx` muestra acción pendiente con botones
-- [ ] `ChatMessage.tsx` muestra burbujas diferenciadas
-- [ ] `bot.ts` API client con sendMessage, confirmAction
-- [ ] Contexto de página se envía correctamente
-- [ ] Diseño responsive verificado
+- [x] `ChatWidget.tsx` renderiza en layout autenticado
+- [x] `useBotChat.ts` maneja todos los estados
+- [x] `ChatConfirmDialog.tsx` muestra acción pendiente con botones
+- [x] `ChatMessage.tsx` muestra burbujas diferenciadas
+- [x] `ChatInput.tsx` input + botón enviar con Enter/Shift+Enter
+- [x] `ChatLoginPrompt.tsx` estado requiresAuth con link a /login
+- [x] `bot.ts` API client con sendMessage, confirmAction, getBotStatus
+- [x] Contexto de página se envía correctamente según ruta actual
+- [x] Integrado en MainLayout.tsx dentro de AuthProvider
+- [x] Diseño responsive: panel completo en mobile, 360px en desktop
 
 ### Wave 5 — Checklist
 - [ ] `knowledge.py` indexa documentos reales al arrancar

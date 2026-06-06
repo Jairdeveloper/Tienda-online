@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Wave 4 — Frontend Chat Widget**: Componente React de chat interactivo integrado con los endpoints del bot B2B via proxy NestJS. Maneja todos los estados conversacionales y se inserta contextualmente en todas las páginas del frontend.
+  - `apps/web/src/api/bot.ts`: API client con `sendBotMessage()`, `confirmBotAction()`, `getBotStatus()` — funciones tipadas para interactuar con los endpoints `/bot/messages`, `/bot/confirm` y `/bot/status`.
+  - `apps/web/src/hooks/useBotChat.ts`: Hook personalizado que gestiona el estado completo del chat (messages, status, sessionId) con soporte para loading, error, requiresAuth, requiresConfirmation. Genera sessionId via `crypto.randomUUID()` y lo persiste en `sessionStorage`.
+  - `apps/web/src/components/bot/ChatWidget.tsx`: Contenedor principal con botón flotante (esquina inferior derecha, z-50), panel deslizable con historial, lectura de contexto de página via `useLocation` de react-router-dom (regex path matching para extraer IDs de producto/pedido desde la URL) para enriquecer peticiones al bot.
+  - `apps/web/src/components/bot/ChatMessage.tsx`: Burbuja de mensaje con alineación diferenciada (usuario derecha azul, bot izquierda gris), fuentes como links pequeños debajo del mensaje.
+  - `apps/web/src/components/bot/ChatInput.tsx`: Textarea expandible + botón enviar con ícono SVG. Enviar con Enter (sin Shift), Shift+Enter para nueva línea.
+  - `apps/web/src/components/bot/ChatConfirmDialog.tsx`: Modal de confirmación con fondo semitransparente, botón Confirmar (verde) y Cancelar (rojo).
+  - `apps/web/src/components/bot/ChatLoginPrompt.tsx`: Estado "requiere iniciar sesión" con enlace a `/login`.
+  - `apps/web/src/components/layout/MainLayout.tsx`: ChatWidget integrado dentro de AuthProvider, fuera del `<main>`.
+  - Diseño responsive: panel completo en mobile, 360px en desktop. Tailwind CSS exclusivamente (z-index alto, animaciones transition, burbujas rounded-2xl con sombras suaves).
+
+- **Wave 3 — Conexion a datos reales (Python → NestJS API)**: El microservicio Python del bot de soporte B2B ahora consume la API REST de NestJS (`/api/v1/*`) para obtener datos reales de catálogo, inventario, pedidos y administración, reemplazando datos mock.
+  - `bot/tienda-online-support-bot/src/tienda_support_bot/tools.py`: `fetch_allowed_context()` ahora hace llamadas HTTP reales via `urllib.request` para catalog.search, catalog.product_detail, inventory.check, orders.my_status y admin.orders.search. `execute_read_or_answer()` ejecuta GET reales. `execute_mutation()` ejecuta PATCH/POST reales. Errores HTTP manejados con mensajes amigables.
+  - `bot/tienda-online-support-bot/src/tienda_support_bot/auth.py`: Nuevo método `resolve_from_context(user_data)` que acepta el usuario pre-resuelto por el proxy NestJS.
+  - `bot/tienda-online-support-bot/src/tienda_support_bot/models.py`: Campo `token` agregado al modelo `User` para forwarding del JWT a la API NestJS.
+  - `bot/tienda-online-support-bot/src/tienda_support_bot/service.py`: `_load_state()` prioriza user context del proxy NestJS sobre resolución local de token. Almacena el token JWT crudo para forwarding.
+  - Variables de entorno: `API_BASE_URL` (default `http://localhost:3000`) para configurar la URL base de NestJS.
+  - Sin dependencias externas — solo `urllib.request` de stdlib.
+
 ### Fixed
 
 - BotService DI crash on Vercel: BotService constructor had `config: ConfigType<typeof botConfig>` parameter without `@Inject(botConfig.KEY)` decorator, causing NestJS `UndefinedDependencyException` during provider instantiation. This crashed the Vercel Lambda with `FUNCTION_INVOCATION_FAILED` because the error was unhandled.

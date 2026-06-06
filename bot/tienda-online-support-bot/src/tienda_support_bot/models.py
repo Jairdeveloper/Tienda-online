@@ -17,6 +17,7 @@ class User:
     roles: list[str] = field(default_factory=list)
     permissions: list[str] = field(default_factory=list)
     is_anonymous: bool = True
+    token: str | None = None  # Raw JWT token for API forwarding
 
 
 @dataclass
