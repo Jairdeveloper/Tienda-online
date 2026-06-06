@@ -17,10 +17,7 @@
     },
     {
       "src": "apps/api/api/handler.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": "apps/api/dist/**"
-      }
+      "use": "@vercel/node"
     },
     {
       "src": "apps/api/api/test.js",
