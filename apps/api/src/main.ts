@@ -119,6 +119,12 @@ export async function createApp(
 
   logger.log({ event: "build_system", message: "init", bot_modules: true });
 
+  const httpAdapter = app.getHttpAdapter();
+  const expressInstance = httpAdapter.getInstance();
+  expressInstance.get("/direct-test", (_req: any, res: any) => {
+    res.json({ status: "direct_ok" });
+  });
+
   return app;
 }
 
