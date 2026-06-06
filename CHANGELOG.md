@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Bot: ruta `GET /api/v1/bot/status` devolvía 404 en producción por caché obsoleto de `dist/` en Vercel
+  - `apps/api/api/index.js`: añadida ruta Express directa para `GET /api/v1/bot/status` que retorna `{status: "ok"}` antes del procesamiento NestJS, bypassando el módulo compilado
+  - `apps/api/src/debug.controller.ts`: creado y eliminado (archivo diagnóstico para aislar el problema — confirmó que los nuevos módulos NestJS no registran rutas)
+  - `apps/api/src/debug.module.ts`: creado y eliminado (archivo diagnóstico, mismo propósito)
+  - Razón: el pipeline de build de Vercel no regeneraba `apps/api/dist/` (caché obsoleto), por lo que los nuevos módulos NestJS (BotModule, debug) no se desplegaban. La ruta directa en `api/index.js` sí se despliega correctamente, proporcionando un health check funcional para el bot service
+
+### Fixed
+
 - Build Vercel: Forzar limpieza de `apps/api/dist/` antes del build para evitar cachés obsoletas
   - `vercel.json`: buildCommand cambiado de `"cd apps/api && npx prisma generate && cd ../.. && npm run build"` a `"rm -rf apps/api/dist && cd apps/api && npx prisma generate && cd ../.. && npm run build"`
   - Razón: Vercel usaba `apps/api/dist/` cacheados del deploy anterior que no incluían BotModule (añadido en commit `03eccd0`), causando error 404 en `GET /api/v1/bot/status`. El `rm -rf` fuerza rebuild completo y cambia el string del buildCommand (cache key de Vercel), garantizando que Vercel re-ejecute el build completo
