@@ -66,7 +66,18 @@ module.exports = async (req, res) => {
   }
 
   if (!mod || mod._loadError) {
-    return send(500, { error: "load_failed" });
+    const info = {
+      error: "load_failed",
+      message: mod._loadError?.message || "unknown",
+      code: mod._loadError?.code || "unknown",
+      basedir: __basedir,
+    };
+    try { info.cwd = process.cwd(); } catch (_) {}
+    try { info.dirname = __dirname; } catch (_) {}
+    try { info.files = require("fs").readdirSync(path.join(__basedir, "dist")).slice(0, 20); } catch (e3) {
+      try { info.files = `error listing dist: ${e3.message}`; } catch (_) { info.files = "unknown"; }
+    }
+    return send(500, info);
   }
 
   if (!app) {
