@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { REDIS_CLIENT } from "../redis/redis.constants";
 import type { RedisClient } from "../redis/redis.constants";
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaClient } from "@prisma/client";
 
 @Injectable()
 export class HealthService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaClient,
     @Inject(REDIS_CLIENT) private readonly redis: RedisClient,
   ) {}
 

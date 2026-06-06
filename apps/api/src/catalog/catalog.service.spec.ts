@@ -1,7 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { CacheService } from '../common/cache/cache.service';
 
 describe('CatalogService', () => {
@@ -35,7 +35,7 @@ describe('CatalogService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CatalogService,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaClient, useValue: mockPrisma },
         { provide: CacheService, useValue: mockCache },
       ],
     }).compile();

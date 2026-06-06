@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { InventoryService } from '../inventory/inventory.service';
 import type { Prisma } from '@prisma/client';
 import { OrderStatus, TERMINAL_STATUSES } from '../orders/enum/order-status.enum';
@@ -14,7 +14,7 @@ import { UpdateInventoryDto } from './dto/update-inventory.dto';
 @Injectable()
 export class AdminService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaClient,
     private readonly inventoryService: InventoryService,
   ) {}
 

@@ -1,7 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { CartService } from '../cart/cart.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -36,7 +36,7 @@ describe('CheckoutService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutService,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaClient, useValue: mockPrisma },
         { provide: RedisService, useValue: mockRedis },
         { provide: CartService, useValue: mockCartService },
         { provide: InventoryService, useValue: mockInventoryService },

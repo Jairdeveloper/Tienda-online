@@ -6,39 +6,53 @@ if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
 }
 
 @Injectable()
-export class PrismaService
-  extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy
-{
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
+  private _client: PrismaClient | null = null;
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
-    super();
+    return new Proxy(this, {
+      get: (target, prop) => {
+        if (prop in target || typeof prop === "symbol") {
+          const value = (target as Record<string | symbol, unknown>)[prop];
+          if (typeof value === "function") {
+            return value.bind(target);
+          }
+          return value;
+        }
+        const client = target._getClient();
+        const clientValue = (client as unknown as Record<string, unknown>)[prop as string];
+        if (typeof clientValue === "function") {
+          return clientValue.bind(client);
+        }
+        return clientValue;
+      },
+    });
   }
 
-  /**
-   * Lazy initialization: intentionally does NOT call $connect().
-   *
-   * PrismaClient's internal methods (e.g., $queryRaw, model findMany, etc.)
-   * automatically call $connect() on first use. By deferring the connection,
-   * we avoid potential native engine crashes during NestJS app initialization
-   * in serverless environments. Connection errors will surface on the first
-   * actual query, where they can be caught and handled gracefully.
-   */
+  private _getClient(): PrismaClient {
+    if (!this._client) {
+      this._client = new PrismaClient();
+      this.logger.log("PrismaClient lazily created");
+    }
+    return this._client;
+  }
+
   async onModuleInit(): Promise<void> {
     this.logger.log(
-      `PrismaService initialized (engine: ${process.env.PRISMA_CLIENT_ENGINE_TYPE || "binary"}, lazy connect enabled)`,
+      `PrismaService initialized (engine: ${process.env.PRISMA_CLIENT_ENGINE_TYPE || "binary"}, lazy connect enabled, Proxy mode)`,
     );
-    // NOT calling this.$connect() — deferred to first query.
   }
 
   async onModuleDestroy(): Promise<void> {
-    try {
-      await this.$disconnect();
-    } catch (e) {
-      this.logger.warn(
-        `Error disconnecting database: ${e instanceof Error ? e.message : String(e)}`,
-      );
+    if (this._client) {
+      try {
+        await this._client.$disconnect();
+      } catch (e) {
+        this.logger.warn(
+          `Error disconnecting database: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
     }
   }
 }

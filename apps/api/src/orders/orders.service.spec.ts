@@ -1,7 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { InventoryService } from '../inventory/inventory.service';
 
 describe('OrdersService', () => {
@@ -26,7 +26,7 @@ describe('OrdersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaClient, useValue: mockPrisma },
         { provide: InventoryService, useValue: mockInventoryService },
       ],
     }).compile();

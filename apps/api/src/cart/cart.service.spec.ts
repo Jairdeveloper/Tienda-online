@@ -1,7 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CartService } from './cart.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { RedisLockService } from '../redis/redis-lock.service';
 
 describe('CartService', () => {
@@ -34,7 +34,7 @@ describe('CartService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CartService,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaClient, useValue: mockPrisma },
         { provide: RedisLockService, useValue: mockRedisLock },
       ],
     }).compile();

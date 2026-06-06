@@ -15,8 +15,4 @@ describe('PrismaService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
-
-  it('should extend PrismaClient', () => {
-    expect(service).toBeInstanceOf(PrismaService);
-  });
 });

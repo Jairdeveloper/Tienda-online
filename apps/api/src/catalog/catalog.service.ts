@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CacheService } from '../common/cache/cache.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { CategoryResponseDto } from './dto/category-response.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { VariantResponseDto } from './dto/variant-response.dto';
@@ -20,7 +20,7 @@ function queryCacheKey(base: string, params: Record<string, unknown>): string {
 @Injectable()
 export class CatalogService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaClient,
     private readonly cache: CacheService,
   ) {}
 

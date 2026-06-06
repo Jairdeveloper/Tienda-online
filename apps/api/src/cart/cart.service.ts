@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { RedisLockService } from '../redis/redis-lock.service';
 import { AddItemDto } from './dto/add-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
@@ -12,7 +12,7 @@ import { CartResponseDto } from './dto/cart-response.dto';
 @Injectable()
 export class CartService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaClient,
     private readonly redisLock: RedisLockService,
   ) {}
 

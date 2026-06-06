@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { RedisService } from '../redis/redis.service';
 import { CartService } from '../cart/cart.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -17,7 +17,7 @@ import type { Prisma } from '@prisma/client';
 @Injectable()
 export class CheckoutService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaClient,
     private readonly redis: RedisService,
     private readonly cartService: CartService,
     private readonly inventoryService: InventoryService,

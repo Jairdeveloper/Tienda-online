@@ -32,13 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **FUNCTION_INVOCATION_FAILED en producción — Prisma engine nativo crashea Lambda**: El engine binario nativo de Prisma (`query-engine`) causa un segfault (SIGSEGV/SIGABRT) en el entorno Vercel Lambda, resultando en `FUNCTION_INVOCATION_FAILED` en `/api/v1/health` y cualquier endpoint que requiera inicialización de NestJS. El crash ocurría durante `NestFactory.create(AppModule)` → `PrismaService.onModuleInit()` → `this.$connect()`.
-  - `apps/api/src/prisma/prisma.service.ts`: 
-    - Se fuerza `PRISMA_CLIENT_ENGINE_TYPE=library` (engine WASM/library en vez de binario nativo) previniendo segfaults en Lambda
-    - Se elimina `$connect()` de `onModuleInit()` — conexión lazy, diferida al primer query real
-    - Se agrega try-catch en el constructor de PrismaClient con logging descriptivo
-  - `apps/api/api/index.js`: Se agrega `PRISMA_CLIENT_ENGINE_TYPE=library` antes de cualquier require de NestJS como safety net bootstrap
-  - Root cause: El engine binario nativo de Prisma no es compatible con el entorno serverless de Vercel Lambda
+- **PrismaService ya no extiende PrismaClient — Proxy lazy para evitar SEGFAULT en Vercel Lambda**: La llamada `new PrismaClient()` causaba SEGFAULT en el entorno Lambda de Vercel durante `NestFactory.create(AppModule)`, incluso con `PRISMA_CLIENT_ENGINE_TYPE=library` activado. La causa raíz era que el constructor de PrismaClient inicializa el engine WASM en el momento de la instanciación, y ese proceso crashea en Lambda. La solución reemplaza la herencia directa (`extends PrismaClient`) con un Proxy que difiere la creación de PrismaClient hasta el primer acceso a una propiedad (e.g. `this.prisma.user.findMany()`), moviendo toda inicialización —incluyendo carga del engine— fuera del bootstrap de NestJS.
+  - `apps/api/src/prisma/prisma.service.ts`: Eliminado `extends PrismaClient`. La clase ahora retorna un Proxy de JavaScript desde su constructor que crea `PrismaClient` lazymente en el primer acceso a propiedad. Esto difiere toda inicialización de PrismaClient —incluyendo carga del engine— hasta la primera consulta real a la base de datos, evitando completamente el crash durante la inicialización de NestJS.
+  - `apps/api/src/prisma/prisma.module.ts`: Agregado `{ provide: PrismaClient, useExisting: PrismaService }` para que servicios puedan inyectar `PrismaClient` directamente (resuelve al mismo Proxy-wrapped service instance).
+  - Todos los 10 archivos de servicio que inyectan PrismaService: Cambiado el tipo de inyección de `PrismaService` a `PrismaClient` para que TypeScript reconozca todos los métodos de PrismaClient (`user.findMany()`, `$transaction()`, `$queryRaw`, etc.).
+  - Todos los 7 archivos de test: Actualizados los tokens de mock providers de `PrismaService` a `PrismaClient`.
+  - Impacto: 20 archivos modificados, 76 inserciones, 62 eliminaciones. Los 18 suites de test (129 tests) pasan correctamente.
 
 - BotService DI crash on Vercel: BotService constructor had `config: ConfigType<typeof botConfig>` parameter without `@Inject(botConfig.KEY)` decorator, causing NestJS `UndefinedDependencyException` during provider instantiation. This crashed the Vercel Lambda with `FUNCTION_INVOCATION_FAILED` because the error was unhandled.
   - `apps/api/src/bot/bot.service.ts`: added `@Inject(botConfig.KEY)` decorator to config parameter
