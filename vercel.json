@@ -16,22 +16,22 @@
       "use": "@vercel/node"
     },
     {
-      "src": "apps/api/api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": "apps/api/dist/**",
-        "bundle": false
-      }
+      "src": "apps/api/api/diagnostic.js",
+      "use": "@vercel/node"
     },
     {
-      "src": "apps/api/api/test.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": "apps/api/dist/**",
-        "bundle": false
-      }
+      "src": "apps/api/api/health.js",
+      "use": "@vercel/node"
     }
   ],
+  "functions": {
+    "apps/api/api/index.js": {
+      "includeFiles": "apps/api/dist/**"
+    },
+    "apps/api/api/test.js": {
+      "includeFiles": "apps/api/dist/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/_diag",
