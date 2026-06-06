@@ -1,6 +1,6 @@
 {
   "installCommand": "cd apps/api && npm ci --include=dev && cd ../../apps/web && npm ci --include=dev",
-  "buildCommand": "rm -rf apps/api/dist && cd apps/api && npx prisma generate && cd ../.. && npm run build",
+  "buildCommand": "rm -rf apps/api/dist && cd apps/api && PRISMA_CLIENT_ENGINE_TYPE=library npx prisma generate && cd ../.. && npm run build",
   "outputDirectory": "apps/web/dist",
   "builds": [
     {

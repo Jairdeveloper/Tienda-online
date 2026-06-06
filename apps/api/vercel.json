@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx prisma generate && nest build",
+  "buildCommand": "PRISMA_CLIENT_ENGINE_TYPE=library npx prisma generate && nest build",
   "outputDirectory": "dist",
   "builds": [
     {
