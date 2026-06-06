@@ -37,15 +37,11 @@
     },
     {
       "source": "/_test",
-      "destination": "apps/api/api/handler.js"
+      "destination": "apps/api/api/test.js"
     },
     {
       "source": "/_health",
       "destination": "apps/api/api/health.js"
-    },
-    {
-      "source": "/_handler",
-      "destination": "apps/api/api/handler.js"
     },
     {
       "source": "/api/(.*)",

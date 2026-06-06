@@ -5,6 +5,8 @@ if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
   process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
 }
 
+let app;
+
 module.exports = async (req, res) => {
   const send = (status, body) => {
     try {
@@ -21,13 +23,28 @@ module.exports = async (req, res) => {
     return send(200, { status: "bypass_ok" });
   }
 
+  if (!app) {
+    let mod;
+    try {
+      mod = require(path.join(__basedir, "dist", "main"));
+    } catch (e) {
+      return send(500, { error: "load_failed", message: e.message, code: e.code });
+    }
+    try {
+      app = await mod.createApp();
+      await app.init();
+    } catch (e) {
+      return send(500, { error: "init_failed", message: e.message });
+    }
+  }
+
   try {
-    const mod = require(path.join(__basedir, "dist", "main"));
-    return send(200, {
-      loaded: true,
-      hasCreateApp: typeof mod.createApp === "function",
+    const instance = app.getHttpAdapter().getInstance();
+    return new Promise((resolve) => {
+      res.on("finish", () => resolve());
+      instance(req, res);
     });
   } catch (e) {
-    return send(500, { error: "load_failed", message: e.message, code: e.code });
+    send(500, { error: "dispatch_error", message: e.message });
   }
 };
