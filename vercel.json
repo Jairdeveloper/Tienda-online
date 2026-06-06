@@ -44,6 +44,10 @@
       "destination": "apps/api/api/health.js"
     },
     {
+      "source": "/_handler",
+      "destination": "apps/api/api/handler.js"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "apps/api/api/handler.js"
     },
