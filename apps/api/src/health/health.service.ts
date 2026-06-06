@@ -20,6 +20,7 @@ export class HealthService {
     return {
       status,
       service: "api",
+      version: "DEBUG-003",
       timestamp: new Date().toISOString(),
       checks: {
         database: dbStatus,
