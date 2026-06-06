@@ -71,6 +71,7 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | --- | ----------------------------------- | ------- | ---- | ------ | ---------- |
 | 018 | `018_PRM_BUILD_AGENT_1_0_DRAFT.md`  | prompts | PRM  | DRAFT  | 2026-05-23 |
 | 028 | `028_PRM_BUILD_AGENTS_1_0_DRAFT.md` | prompts | PRM  | DRAFT  | 2026-05-31 |
+| 055 | `055_PRM_AGENT_ORCHESTRATOR_1_0_DRAFT.md` | prompts | PRM | DRAFT | 2026-06-05 |
 
 ## AI (Knowledge Base)
 
@@ -92,6 +93,7 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 030 | `030_DEV_REFERENCE_AGENT_AUTOIMPROVEMENT_1_0_DRAFT.md` | dev  | REFERENCE | DRAFT  | 2026-05-31 |
 | 034 | `034_EXEC_PLAN_PROMPT_COMPILER_1_0_DRAFT.md`           | dev  | EXEC      | DRAFT  | 2026-06-02 |
 | 044 | `044_DEV_GUIDE_SHELL_STYLE_1_0_DRAFT.md`                | dev  | GUIDE     | DRAFT  | 2026-06-02 |
+| 056 | `056_EXEC_AGENT_ORCHESTRATOR_1_0_DRAFT.md`             | dev  | EXEC      | DRAFT  | 2026-06-05 |
 
 ## Frontend
 

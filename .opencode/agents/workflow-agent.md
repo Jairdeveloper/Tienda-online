@@ -302,6 +302,7 @@ toda comunicación inter-agente pasa por mí.
 | 11 | **compaction** | Resumen/compaction de contexto | — | **Desactivado** (no delegar) | — |
 | 12 | **reverse-engineer** | Ingeniería inversa: analiza código fuente NestJS/TypeScript y produce documentación técnica en lenguaje natural | read, glob, grep, write | Necesitas documentar código existente; generar documentación de módulos; mapear dependencias entre servicios; extraer contratos de API; describir flujos de datos (request→response) | ★★★ |
 | 13 | **vercel-deploy** | Experto en deploy NestJS en Vercel: investiga documentación oficial, diagnostica errores serverless, optimiza vercel.json y configura Prisma/Neon/Upstash para serverless | webfetch, websearch, read, write | Necesitas desplegar en Vercel; diagnosticar errores de deploy; optimizar configuración serverless; investigar mejores prácticas de Vercel para NestJS + Prisma | ★★★ |
+| 14 | **agent-orchestrator** | Orquestación de flujo de datos entre agentes: pipelines multi-agente, transformación de datos, caché de resultados intermedios, manejo de errores (retry/skip/abort/fallback), trazabilidad | read, write, edit, grep, glob | Necesitas ejecutar una secuencia de agentes donde el output de uno es input del siguiente; pipeline multi-agente que requiere caché, transformación de datos y trazabilidad; manejo de errores configurable por paso | ★★★ |
 
 ### 9.2 Flujo de delegación
 
@@ -316,6 +317,9 @@ Tarea recibida
 │
 ├─ ¿Es una tarea de infraestructura/agentes?
 │   └─→ Consultar current-instruction (reglas, formato de prompts)
+│
+├─ ¿Necesito un pipeline multi-agente (secuencia de agentes encadenados)?
+│   └─→ Delegar a agent-orchestrator (define pipeline, transforma datos entre pasos, cachea resultados, maneja errores, provee trazabilidad)
 │
 ├─ ¿Implica cambios en backend?
 │   ├─ ¿Diseño arquitectónico? → Consultar nestjs-architect

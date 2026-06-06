@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Build Vercel: Forzar limpieza de `apps/api/dist/` antes del build para evitar cachés obsoletas
+  - `vercel.json`: buildCommand cambiado de `"cd apps/api && npx prisma generate && cd ../.. && npm run build"` a `"rm -rf apps/api/dist && cd apps/api && npx prisma generate && cd ../.. && npm run build"`
+  - Razón: Vercel usaba `apps/api/dist/` cacheados del deploy anterior que no incluían BotModule (añadido en commit `03eccd0`), causando error 404 en `GET /api/v1/bot/status`. El `rm -rf` fuerza rebuild completo y cambia el string del buildCommand (cache key de Vercel), garantizando que Vercel re-ejecute el build completo
+
 - Build Vercel: lockfile mismatch en `apps/api/` por `@nestjs/axios` sin resolver en `package-lock.json`
   - `package.json` (raíz): eliminado `"dependencies": {"@nestjs/axios": "^4.0.1"}` — root no debe tener dependencias
   - `apps/api/package.json`: version `@nestjs/axios` de `^4.0.0` a `^4.0.1`
