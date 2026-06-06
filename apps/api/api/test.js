@@ -43,6 +43,22 @@ module.exports = async (req, res) => {
       info.mainCode = e.code;
     }
 
+    info.stage = "try_create_app";
+    try {
+      const m = require(path.join(basedir, "dist", "main"));
+      const a = await m.createApp();
+      info.createAppOk = true;
+      info.stage = "try_init_app";
+      try {
+        await a.init();
+        info.initAppOk = true;
+      } catch (e) {
+        info.initAppError = e.message;
+      }
+    } catch (e) {
+      info.createAppError = e.message;
+    }
+
     info.stage = "done";
     res.status(200).json(info);
   } catch (e) {
