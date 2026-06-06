@@ -16,7 +16,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "apps/api/api/index.js",
+      "src": "apps/api/api/handler.js",
       "use": "@vercel/node",
       "config": {
         "includeFiles": "apps/api/dist/**"
@@ -45,7 +45,7 @@
     },
     {
       "source": "/api/(.*)",
-      "destination": "apps/api/api/index.js"
+      "destination": "apps/api/api/handler.js"
     },
     {
       "source": "/assets/(.*)",
