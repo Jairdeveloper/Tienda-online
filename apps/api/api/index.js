@@ -53,7 +53,8 @@ module.exports = async (req, res) => {
   };
 
   // Emergency bypass: handle bot/status directly when NestJS can't load
-  if (req.method === "GET" && req.url.startsWith("/api/v1/bot/status")) {
+  // Vercel rewrite strips prefix, so match both /api/v1/bot/status and /bot/status
+  if (req.method === "GET" && req.url && req.url.includes("/bot/status")) {
     return send(200, { status: "bypass_ok" });
   }
 
