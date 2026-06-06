@@ -37,7 +37,7 @@
     },
     {
       "source": "/_test",
-      "destination": "apps/api/api/test.js"
+      "destination": "apps/api/api/handler.js"
     },
     {
       "source": "/_health",
