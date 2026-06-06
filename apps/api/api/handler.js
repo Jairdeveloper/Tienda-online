@@ -1,10 +1,50 @@
+const path = require("path");
+const __basedir = path.resolve(__dirname, "..");
+
+if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
+  process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
+}
+
+let app;
+
 module.exports = async (req, res) => {
-  try {
-    if (!res.headersSent) {
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ status: "ok" }));
+  const send = (status, body) => {
+    try {
+      if (!res.headersSent) {
+        res.writeHead(status, { "content-type": "application/json" });
+        res.end(JSON.stringify(body));
+      }
+    } catch (_) {
+      try { res.end("{}"); } catch (_) {}
     }
-  } catch (_) {
-    try { res.end("{}"); } catch (_) {}
+  };
+
+  if (req.method === "GET" && req.url && req.url.includes("/bot/status")) {
+    return send(200, { status: "bypass_ok" });
+  }
+
+  if (!app) {
+    let mod;
+    try {
+      mod = require(path.join(__basedir, "dist", "main"));
+    } catch (e) {
+      return send(500, { error: "load_failed", message: e.message, code: e.code });
+    }
+    try {
+      app = await mod.createApp();
+      await app.init();
+    } catch (e) {
+      return send(500, { error: "init_failed", message: e.message });
+    }
+  }
+
+  try {
+    const instance = app.getHttpAdapter().getInstance();
+    return new Promise((resolve) => {
+      res.on("finish", () => resolve());
+      instance(req, res);
+    });
+  } catch (e) {
+    send(500, { error: "dispatch_error", message: e.message });
   }
 };
