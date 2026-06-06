@@ -16,6 +16,7 @@ import { CatalogModule } from "./catalog/catalog.module";
 import { CheckoutModule } from "./checkout/checkout.module";
 import { CommonModule } from "./common/common.module";
 import { validationSchema } from "./config/env.validation";
+import { DebugModule } from "./debug.module";
 import { HealthModule } from "./health/health.module";
 import { InventoryModule } from "./inventory/inventory.module";
 import { OrdersModule } from "./orders/orders.module";
@@ -47,6 +48,7 @@ import { UsersModule } from "./users/users.module";
     CommonModule,
     PrismaModule,
     RedisModule,
+    DebugModule,
     HealthModule,
     AuthModule,
     UsersModule,
