@@ -22,12 +22,24 @@
         "includeFiles": "apps/api/dist/**",
         "bundle": false
       }
+    },
+    {
+      "src": "apps/api/api/test.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "apps/api/dist/**",
+        "bundle": false
+      }
     }
   ],
   "rewrites": [
     {
       "source": "/_diag",
       "destination": "apps/api/api/diagnostic.js"
+    },
+    {
+      "source": "/_test",
+      "destination": "apps/api/api/test.js"
     },
     {
       "source": "/_health",
