@@ -1,5 +1,6 @@
 import { HttpService } from "@nestjs/axios";
 import {
+  Inject,
   Injectable,
   ServiceUnavailableException,
 } from "@nestjs/common";
@@ -16,6 +17,7 @@ export class BotService {
 
   constructor(
     private readonly httpService: HttpService,
+    @Inject(botConfig.KEY)
     config: ConfigType<typeof botConfig>,
   ) {
     this.botUrl = config.serviceUrl;

@@ -2,31 +2,31 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 class SourceDto {
   @ApiProperty()
-  type: string;
+  type!: string;
 
   @ApiProperty()
-  title: string;
+  title!: string;
 }
 
 export class BotResponseDto {
   @ApiProperty()
-  sessionId: string;
+  sessionId!: string;
 
   @ApiProperty()
-  reply: string;
+  reply!: string;
 
   @ApiProperty()
-  intent: string;
+  intent!: string;
 
   @ApiProperty()
-  requiresConfirmation: boolean;
+  requiresConfirmation!: boolean;
 
   @ApiPropertyOptional()
   pendingActionId?: string;
 
   @ApiProperty({ type: [SourceDto] })
-  sources: SourceDto[];
+  sources!: SourceDto[];
 
   @ApiProperty()
-  requestId: string;
+  requestId!: string;
 }

@@ -94,3 +94,5 @@ workflow.sh compile "Crea un módulo de pagos..."
   entrenar al bot con opciones comandos modos para que le responda a workflow.sh
 
   Arch Linux workflow. This is a meta-level concept - workflow.sh as the OS kernel/framework for the user's interactions with Arch Linux.
+
+  si falla build, regresa al ultimo commit donde el build funcionaba, No ejecutar comandos que reviertan el estado actual del reositorio(Me refiero a borrar archivos, (No entiendo mucho de git, aún.)) La finalidad de este comportamiento es para hacer mantenimiento a los archivos que rompen el build
