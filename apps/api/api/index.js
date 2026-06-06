@@ -1,48 +1,15 @@
 const path = require("path");
 const __basedir = path.resolve(__dirname, "..");
 
-// Force Prisma to use library engine (WASM) instead of native binary.
-// MUST be set before any NestJS/Prisma imports to prevent SEGFAULT
-// in Lambda (FUNCTION_INVOCATION_FAILED).
 if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
   process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
 }
 
-// Static require for Vercel nft tracing — nft only traces string literals
-// Without this, dist/main.js won't be included in the Lambda (500 load_failed)
-try { require("../dist/main"); } catch (_) {}
-
-// Prisma proxy: prevent Vercel postinstall + override CI detection
-try {
-  const pm = require("@prisma/client");
-  const Orig = pm.PrismaClient;
-  pm.PrismaClient = new Proxy(Orig, {
-    construct(t, a) {
-      const o = a[0] || {};
-      o.__internal = o.__internal || {};
-      const orig = o.__internal.configOverride;
-      o.__internal.configOverride = (c) => {
-        let r = orig ? orig(c) : { ...c };
-        r.postinstall = false;
-        r.ciName = undefined;
-        return r;
-      };
-      a[0] = o;
-      return Reflect.construct(t, a);
-    },
-  });
-} catch (_) {}
-
-// Try static path first (traced by nft), fall back to dynamic path.join
 let mod;
 try {
-  mod = require("../dist/main");
-} catch (e1) {
-  try {
-    mod = require(path.join(__basedir, "dist", "main"));
-  } catch (e2) {
-    mod = { _loadError: e2 };
-  }
+  mod = require(path.join(__basedir, "dist", "main"));
+} catch (e) {
+  mod = { _loadError: e };
 }
 
 let app;
@@ -59,25 +26,16 @@ module.exports = async (req, res) => {
     }
   };
 
-  // Emergency bypass: handle bot/status directly when NestJS can't load
-  // Vercel rewrite strips prefix, so match both /api/v1/bot/status and /bot/status
   if (req.method === "GET" && req.url && req.url.includes("/bot/status")) {
     return send(200, { status: "bypass_ok" });
   }
 
   if (!mod || mod._loadError) {
-    const info = {
+    return send(500, {
       error: "load_failed",
       message: mod._loadError?.message || "unknown",
       code: mod._loadError?.code || "unknown",
-      basedir: __basedir,
-    };
-    try { info.cwd = process.cwd(); } catch (_) {}
-    try { info.dirname = __dirname; } catch (_) {}
-    try { info.files = require("fs").readdirSync(path.join(__basedir, "dist")).slice(0, 20); } catch (e3) {
-      try { info.files = `error listing dist: ${e3.message}`; } catch (_) { info.files = "unknown"; }
-    }
-    return send(500, info);
+    });
   }
 
   if (!app) {
