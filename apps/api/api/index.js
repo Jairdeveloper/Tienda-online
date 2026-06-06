@@ -5,13 +5,6 @@ if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
   process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
 }
 
-let mod;
-try {
-  mod = require(path.join(__basedir, "dist", "main"));
-} catch (e) {
-  mod = { _loadError: e };
-}
-
 let app;
 
 module.exports = async (req, res) => {
@@ -30,15 +23,17 @@ module.exports = async (req, res) => {
     return send(200, { status: "bypass_ok" });
   }
 
-  if (!mod || mod._loadError) {
-    return send(500, {
-      error: "load_failed",
-      message: mod._loadError?.message || "unknown",
-      code: mod._loadError?.code || "unknown",
-    });
-  }
-
   if (!app) {
+    let mod;
+    try {
+      mod = require(path.join(__basedir, "dist", "main"));
+    } catch (e) {
+      return send(500, {
+        error: "load_failed",
+        message: e.message,
+        code: e.code,
+      });
+    }
     try {
       app = await mod.createApp();
       await app.init();

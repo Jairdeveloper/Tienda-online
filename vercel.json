@@ -2,14 +2,34 @@
   "installCommand": "cd apps/api && npm ci --include=dev && cd ../../apps/web && npm ci --include=dev",
   "buildCommand": "rm -rf apps/api/dist && cd apps/api && PRISMA_CLIENT_ENGINE_TYPE=library npx prisma generate && cd ../.. && npm run build",
   "outputDirectory": "apps/web/dist",
-  "functions": {
-    "apps/api/api/index.js": {
-      "includeFiles": "apps/api/dist/**"
+  "builds": [
+    {
+      "src": "apps/web/dist/**",
+      "use": "@vercel/static"
     },
-    "apps/api/api/test.js": {
-      "includeFiles": "apps/api/dist/**"
+    {
+      "src": "apps/api/api/diagnostic.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "apps/api/api/health.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "apps/api/api/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "apps/api/dist/**"
+      }
+    },
+    {
+      "src": "apps/api/api/test.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "apps/api/dist/**"
+      }
     }
-  },
+  ],
   "rewrites": [
     {
       "source": "/_diag",
