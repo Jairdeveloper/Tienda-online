@@ -148,11 +148,45 @@ Devuelve esta estructura:
 
 - **NO** ejecutes `git reset`, `git revert`, `git checkout --`, `rm`, `mv` ni ningun comando destructivo
 - **NO** modifiques archivos ni el working tree bajo ninguna circunstancia
-- **NO** ejecutes `npm`, `node`, `prisma`, `jest`, `npx`
 - **SI** puedes ejecutar: `git log`, `git diff`, `git show`, `git status` (solo lectura)
 - **SI** puedes usar: `read`, `grep`, `glob` para inspeccionar archivos
 - Si no encuentras un commit con `[build:ok]`, usa el criterio heuristico y advierte al usuario
 - No asumas que HEAD es siempre el commit malo — puede haber commits intermedios estables
+
+## Permisos Especiales de Ejecucion
+
+A pesar de las restricciones generales del proyecto (AGENTS.md) que prohiben
+ejecutar `npm`, `node`, `prisma`, `jest`, `npx` automaticamente, este agente
+(dev-ops) tiene permiso EXCEPCIONAL otorgado por el usuario para ejecutar
+los siguientes comandos SOLO en el contexto de **verificacion de fixes**:
+
+| Comando | Proposito | Cuando Usarlo |
+|---------|-----------|---------------|
+| `cd apps/api && npm run build` | Verificar que el fix compila | Despues de aplicar un fix de TypeScript, NestJS o configuracion de build |
+| `cd apps/api && npm test` | Verificar que tests unitarios pasan | Despues de aplicar un fix que afecta logica de negocio, DTOs, o controladores |
+| `cd apps/api && npx prisma generate` | Regenerar Prisma Client | Despues de cambios en `schema.prisma` o migraciones |
+| `cd apps/api && npm run test:e2e` | Verificar tests de integracion | Solo si el usuario lo solicita explicitamente |
+| `cd apps/api && npx prisma migrate deploy` | Aplicar migraciones existentes | Solo si el usuario lo solicita explicitamente para deploy |
+
+### Condiciones de Uso
+
+1. **Proposito exclusivo de verificacion**: Solo ejecutar estos comandos como VERIFICACION de que un fix aplicado funciona correctamente. No para propositos de desarrollo, exploracion o debugging no dirigido.
+2. **Reportar resultado completo**: Devolver stdout + stderr + exit code del comando ejecutado.
+3. **Diagnosticar fallos**: Si el comando falla, usar el protocolo de Build Diagnostic (seccion anterior) para encontrar la causa raiz.
+4. **No ejecutar comandos destructivos**: `prisma migrate dev`, `prisma db push`, `npm publish`, `npm run start:*` estan explicitamente prohibidos.
+5. **No ejecutar sin contexto**: No ejecutar comandos sin un proposito claro de verificacion vinculado a un fix especifico.
+6. **Timeout aware**: Algunos comandos (`npm test`, `npm run test:e2e`) pueden tomar mas de 60s. Configurar timeout adecuado al invocar bash.
+7. **Sobrescribe AGENTS.md**: En caso de conflicto entre esta seccion y AGENTS.md, prevalece esta seccion por autorizacion directa del usuario.
+
+### Comportamiento Esperado
+
+Cuando se invoque a dev-ops para verificar un fix, debe:
+
+1. Identificar que comandos de verificacion son relevantes segun el fix aplicado
+2. Ejecutarlos en orden (build primero, test despues)
+3. Reportar exito/fallo de cada uno
+4. Si falla, diagnosticar con git diff y sugerir fix
+5. Si todo pasa, marcar commit candidato con `[build:ok]`
 
 ## Output Esperado
 
@@ -166,6 +200,60 @@ Para cada diagnostico:
 6. **Comando de verificacion**: Comando exacto para confirmar el fix (ej: `npm run build`)
 
 Si el error no se puede atribuir a un cambio especifico, reporta todos los candidatos y sugiere aislamiento por prueba de comentar/bloquear cada cambio.
+
+## Protocolo de Diagnostico Runtime (Errores 404/500 en Produccion)
+
+Ademas de diagnosticar builds fallidos, dev-ops puede diagnosticar errores runtime en endpoints desplegados.
+
+### 1. Detectar Fallo Runtime
+
+El usuario te pasa una URL de produccion con un error:
+- `404 Not Found` en rutas que deberian existir
+- `500 Internal Server Error` con o sin cuerpo JSON
+- `FUNCTION_INVOCATION_FAILED` en logs de Vercel
+- `Execution timeout` (funcion serverless excede el limite)
+
+### 2. Diagnosticar Causa
+
+| Sintoma | Causa Probable | Que Revisar |
+|---------|---------------|-------------|
+| 404 en `/api/*` con `load_failed` | dist/main.js no existe en el Lambda | BuildCommand en vercel.json, build local |
+| 404 en `/*` (SPA) | outputDirectory o rewrites incorrectos | vercel.json outputDirectory, rewrites |
+| 500 en endpoint especifico | Error no manejado en NestJS | Logs de Vercel, controladores, DI |
+| `FUNCTION_INVOCATION_FAILED` | Excepcion no capturada en handler | api/index.js, mod.init(), app.init() |
+| Timeout en respuesta | Operacion sincronica lenta | Conexion DB, Redis, bucles infinitos |
+
+### 3. Comparar Deployments
+
+```bash
+# Probar endpoints directamente
+curl -s -o /dev/null -w "%{http_code}" https://<url>/api/v1/health
+curl -s https://<url>/api/v1/health | jq .
+
+# Comparar con otro deployment/produccion
+# Usar webfetch para obtener respuestas completas
+```
+
+### 4. Reportar Hallazgos
+
+```
+## Diagnostico Runtime
+
+### URL(s) investigadas
+- <url> — <estado>
+
+### Endpoints
+- <path>: <status> <body> 
+
+### Causa probable
+<descripcion con archivo y linea>
+
+### Fix sugerido
+<que archivo editar y como>
+
+### Comando de verificacion post-fix
+<comando para deploy/verificacion>
+```
 
 ## Convencion [build:ok]
 

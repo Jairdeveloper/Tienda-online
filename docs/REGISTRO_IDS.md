@@ -117,6 +117,7 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | ID  | Archivo                                | Área    | Tipo   | Estado | Creado     |
 | --- | -------------------------------------- | ------- | ------ | ------ | ---------- |
 | 041 | `041_BUGFIX_BACKEND_INIT_1_0_DRAFT.md` | backend | BUGFIX | ACTIVE | 2026-06-01 |
+| 057 | `057_BUGFIX_BACKEND_LAMBDA_CRASH_1_0_DRAFT.md` | backend | BUGFIX | DRAFT | 2026-06-06 |
 
 ---
 

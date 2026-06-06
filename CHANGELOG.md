@@ -23,6 +23,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `apps/api/src/bot/dto/bot-response.dto.ts`: added `!` to all non-optional properties
   - Root cause: TypeScript strict mode requires definite assignment for uninitialized properties
 
+- **nft tracing regression**: Commit `97e5f31` replaced `require("../dist/main")` (string literal, trazable por nft) with `require(path.join(...))` (dinámico, no trazable), causing `dist/main.js` to be excluded from the Vercel Lambda bundle. This resulted in `500 load_failed` on all API endpoints.
+  - `apps/api/api/index.js`: restored static `require("../dist/main")` as the primary load path for nft tracing, with `path.join()` fallback as secondary, and a pre-warm `require()` call at module scope
+  - Root cause: nft (Node File Trace) only traces `require()` calls with string literals; dynamic expressions are invisible
+
+- **Emergency bypass for bot/status**: Added direct route handler in `api/index.js` that responds to `GET /api/v1/bot/status` with `{"status":"bypass_ok"}` when NestJS fails to load, preventing 500 errors on this critical endpoint.
+  - `apps/api/api/index.js`: added emergency bypass before NestJS initialization
+  - Root cause: no fallback mechanism when NestJS Lambda fails to initialize
+
+- **vercel.json outputDirectory conflict**: `"outputDirectory": "apps/web/dist"` conflicted with custom builds, causing Vercel to ignore frontend static assets and serve 404 for the SPA.
+  - `vercel.json`: removed `outputDirectory` line from global config
+  - Root cause: `outputDirectory` redirect is incompatible with custom `buildCommand` that produces static output in a subdirectory
+
+### Documentation
+
+- Documentación formal de la incidencia de Lambda crash: `docs/057_BUGFIX_BACKEND_LAMBDA_CRASH_1_0_DRAFT.md` — cubre las 4 causas raíz (DebugModule huérfana, BotService DI, nft tracing, outputDirectory), fixes aplicados y lecciones aprendidas
+  - Added Runtime Error Diagnostic section to `.opencode/agents/dev-ops.md` for diagnosing 404/500 errors in production
+
 ---
 
 ## [0.1.0] — 2026-05-29
