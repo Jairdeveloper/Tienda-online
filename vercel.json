@@ -28,6 +28,13 @@
       "config": {
         "includeFiles": "apps/api/dist/**"
       }
+    },
+    {
+      "src": "apps/api/api/debug.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "apps/api/dist/**"
+      }
     }
   ],
   "rewrites": [
@@ -42,6 +49,10 @@
     {
       "source": "/_health",
       "destination": "apps/api/api/health.js"
+    },
+    {
+      "source": "/_debug",
+      "destination": "apps/api/api/debug.js"
     },
     {
       "source": "/api/(.*)",
