@@ -117,6 +117,8 @@ export async function createApp(
     SwaggerModule.setup(`${apiPrefix}/${swaggerPath}`, app, document);
   }
 
+  logger.log({ event: "build_system", message: "init", bot_modules: true });
+
   return app;
 }
 
