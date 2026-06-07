@@ -4,14 +4,16 @@ import { PrismaService } from './prisma.service';
 
 class PrismaModuleClass {}
 
-const PrismaModule: new () => any = Global()(
-  Module({
-    providers: [
-      PrismaService,
-      { provide: PrismaClient, useExisting: PrismaService },
-    ],
-    exports: [PrismaService, PrismaClient],
-  })(PrismaModuleClass) as new () => any,
-) as new () => any;
+const decorated = Module({
+  providers: [
+    PrismaService,
+    { provide: PrismaClient, useExisting: PrismaService },
+  ],
+  exports: [PrismaService, PrismaClient],
+})(PrismaModuleClass) || PrismaModuleClass;
+
+Global()(decorated);
+
+const PrismaModule = decorated;
 
 export { PrismaModule };
