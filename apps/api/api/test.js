@@ -1,4 +1,3 @@
-// Diagnostic endpoint — tests NestJS loading without Prisma
 const path = require("path");
 const basedir = path.resolve(__dirname, "..");
 
@@ -15,7 +14,7 @@ module.exports = async (req, res) => {
     const distDir = path.join(basedir, "dist");
     info.distExists = fs.existsSync(distDir);
     if (info.distExists) {
-      info.distFiles = fs.readdirSync(distDir).slice(0, 30);
+      info.distFiles = fs.readdirSync(distDir);
     }
 
     info.stage = "check_prisma_env";
@@ -32,6 +31,29 @@ module.exports = async (req, res) => {
       info.prismaError = e.message;
     }
 
+    info.stage = "try_load_prisma_module";
+    try {
+      const pm2 = require(path.join(basedir, "dist", "prisma", "prisma.module"));
+      info.prismaModuleLoaded = true;
+      info.prismaModuleType = typeof pm2.PrismaModule;
+      info.prismaModuleKeys = Object.keys(pm2);
+    } catch (e) {
+      info.prismaModuleLoaded = false;
+      info.prismaModuleError = e.message;
+      info.prismaModuleErrorType = e.constructor?.name;
+    }
+
+    info.stage = "try_load_app_module";
+    try {
+      const am2 = require(path.join(basedir, "dist", "app.module"));
+      info.appModuleLoaded = true;
+    } catch (e) {
+      info.appModuleLoaded = false;
+      info.appModuleError = e.message;
+      info.appModuleErrorType = e.constructor?.name;
+      info.appModuleErrorStack = (e.stack || "").split("\n").slice(0, 5);
+    }
+
     info.stage = "try_load_main";
     try {
       const m = require(path.join(basedir, "dist", "main"));
@@ -40,7 +62,9 @@ module.exports = async (req, res) => {
     } catch (e) {
       info.mainLoaded = false;
       info.mainError = e.message;
+      info.mainErrorType = e.constructor?.name;
       info.mainCode = e.code;
+      info.mainStack = (e.stack || "").split("\n").slice(0, 5);
     }
 
     info.stage = "try_create_app";
