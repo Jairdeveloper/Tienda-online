@@ -18,6 +18,10 @@ module.exports = async (req, res) => {
     }
   };
 
+  if (req.method === "GET" && req.url && req.url.includes("/bot/status")) {
+    return send(200, { status: "bypass_ok" });
+  }
+
   if (!app) {
     try {
       const core = require("@nestjs/core");
@@ -29,7 +33,6 @@ module.exports = async (req, res) => {
       const { CommonModule } = require(path.join(__dirname, "..", "dist", "common", "common.module"));
       const { PrismaModule } = require(path.join(__dirname, "..", "dist", "prisma", "prisma.module"));
 
-      // Inline AppModule — WITH PrismaModule
       class InlineAppModule {}
       common.Module({
         imports: [
