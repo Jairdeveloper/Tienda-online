@@ -1,51 +1,35 @@
 const path = require("path");
-const basedir = path.resolve(__dirname, "..");
 
 module.exports = async (req, res) => {
   const info = {};
 
-  if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
-    process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
-  }
+  if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
 
-  // 1: require dist/prisma/prisma.module
+  // Load all modules (we know this works)
   try {
-    const pm = require(path.join(basedir, "dist", "prisma", "prisma.module"));
-    info.m1_prismaModule = "ok";
-    info.m1_keys = Object.keys(pm).join(",");
-    info.m1_type = typeof pm.PrismaModule;
-  } catch (e) {
-    info.m1_prismaModule = "error";
-    info.m1_err = e.message;
-    info.m1_errType = e.constructor?.name;
-    info.m1_stack = (e.stack || "").split("\n").slice(0, 3);
-    return res.json(info);
-  }
+    const pm = require(path.join(__dirname, "..", "dist", "prisma", "prisma.module"));
+    info.pm = "ok";
+  } catch (e) { return res.json({ err: "pm:" + e.message }); }
 
-  // 2: require dist/app.module
   try {
-    const am = require(path.join(basedir, "dist", "app.module"));
-    info.m2_appModule = "ok";
-    info.m2_keys = Object.keys(am).join(",");
-  } catch (e) {
-    info.m2_appModule = "error";
-    info.m2_err = e.message;
-    info.m2_errType = e.constructor?.name;
-    info.m2_stack = (e.stack || "").split("\n").slice(0, 3);
-    return res.json(info);
-  }
+    const am = require(path.join(__dirname, "..", "dist", "app.module"));
+    info.am = "ok";
+  } catch (e) { return res.json({ err: "am:" + e.message }); }
 
-  // 3: require dist/main
+  let main;
   try {
-    const m = require(path.join(basedir, "dist", "main"));
-    info.m3_main = "ok";
-    info.m3_hasCreate = typeof m.createApp;
+    main = require(path.join(__dirname, "..", "dist", "main"));
+    info.main = "ok";
+  } catch (e) { return res.json({ err: "main:" + e.message }); }
+
+  // Now call createApp (this is what handler.js does)
+  try {
+    const app = await main.createApp();
+    info.create = "ok";
+    try { await app.close(); info.close = "ok"; } catch (e) { info.close = e.message; }
   } catch (e) {
-    info.m3_main = "error";
-    info.m3_err = e.message;
-    info.m3_errType = e.constructor?.name;
-    info.m3_stack = (e.stack || "").split("\n").slice(0, 3);
-    return res.json(info);
+    info.create = "err:" + (e.message || e.constructor?.name || "?");
+    info.createStack = (e.stack || "").split("\n").slice(0, 5);
   }
 
   res.json(info);
