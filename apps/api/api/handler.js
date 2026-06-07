@@ -25,17 +25,15 @@ module.exports = async (req, res) => {
       const config = require("@nestjs/config");
       const { ExpressAdapter } = require("@nestjs/platform-express");
 
-      const { PrismaModule } = require(path.join(__dirname, "..", "dist", "prisma", "prisma.module"));
       const { RedisModule } = require(path.join(__dirname, "..", "dist", "redis", "redis.module"));
       const { CommonModule } = require(path.join(__dirname, "..", "dist", "common", "common.module"));
 
-      // Build AppModule inline — no decorators
+      // Inline AppModule — NO PrismaModule
       class InlineAppModule {}
       common.Module({
         imports: [
           config.ConfigModule.forRoot({ isGlobal: true, envFilePath: [".env"] }),
           CommonModule,
-          PrismaModule,
           RedisModule,
         ],
         providers: [],
@@ -45,7 +43,7 @@ module.exports = async (req, res) => {
       const nestApp = await core.NestFactory.create(InlineAppModule, adapter, { bufferLogs: true });
       app = nestApp;
     } catch (e) {
-      return send(500, { error: "init_failed", message: e.message, type: e.constructor?.name, stack: (e.stack || "").split("\n").slice(0, 5) });
+      return send(500, { error: "init_failed", message: e.message, type: e.constructor?.name });
     }
   }
 
