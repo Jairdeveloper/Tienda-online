@@ -9,44 +9,52 @@ module.exports = async (req, res) => {
   }
   info.engineType = process.env.PRISMA_CLIENT_ENGINE_TYPE;
 
-  // 1: require dist/prisma/prisma.module directly (has || fallback fix)
+  // Step 1-3: load prisma.module, app.module, main (all succeeded before)
   try {
-    const pm = require(path.join(basedir, "dist", "prisma", "prisma.module"));
-    info.m1_prismaModule = "ok";
-    info.m1_keys = Object.keys(pm).join(",");
-    info.m1_type = typeof pm.PrismaModule;
+    require(path.join(basedir, "dist", "prisma", "prisma.module"));
+    info.s1_prismaModule = "ok";
   } catch (e) {
-    info.m1_prismaModule = "error";
-    info.m1_err = e.message;
-    info.m1_errType = e.constructor?.name;
-    info.m1_stack = (e.stack || "").split("\n").slice(0, 3);
+    info.s1_prismaModule = "error";
+    info.s1_err = e.message;
     return res.json(info);
   }
 
-  // 2: require dist/app.module (loads all domain modules)
   try {
-    const am = require(path.join(basedir, "dist", "app.module"));
-    info.m2_appModule = "ok";
-    info.m2_keys = Object.keys(am).join(",");
+    require(path.join(basedir, "dist", "app.module"));
+    info.s2_appModule = "ok";
   } catch (e) {
-    info.m2_appModule = "error";
-    info.m2_err = e.message;
-    info.m2_errType = e.constructor?.name;
-    info.m2_stack = (e.stack || "").split("\n").slice(0, 5);
+    info.s2_appModule = "error";
+    info.s2_err = e.message;
     return res.json(info);
   }
 
-  // 3: require dist/main
+  let main;
   try {
-    const m = require(path.join(basedir, "dist", "main"));
-    info.m3_main = "ok";
-    info.m3_hasCreate = typeof m.createApp;
+    main = require(path.join(basedir, "dist", "main"));
+    info.s3_main = "ok";
   } catch (e) {
-    info.m3_main = "error";
-    info.m3_err = e.message;
-    info.m3_errType = e.constructor?.name;
-    info.m3_stack = (e.stack || "").split("\n").slice(0, 5);
+    info.s3_main = "error";
+    info.s3_err = e.message;
     return res.json(info);
+  }
+
+  // Step 4: call createApp (this is where the crash happens)
+  try {
+    const app = await main.createApp();
+    info.s4_create = "ok";
+    try {
+      await app.init();
+      info.s5_init = "ok";
+    } catch (e) {
+      info.s5_init = "error";
+      info.s5_err = e.message;
+      info.s5_errType = e.constructor?.name;
+    }
+  } catch (e) {
+    info.s4_create = "error";
+    info.s4_err = e.message;
+    info.s4_errType = e.constructor?.name;
+    info.s4_stack = (e.stack || "").split("\n").slice(0, 5);
   }
 
   res.json(info);
