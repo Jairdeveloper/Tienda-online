@@ -63,6 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `vercel.json`: removed `outputDirectory` line from global config
   - Root cause: `outputDirectory` redirect is incompatible with custom `buildCommand` that produces static output in a subdirectory
 
+- **Vercel Lambda crash — `__decorate` helper in compiled `prisma.module.ts`**: The TypeScript `__decorate` helper was causing `FUNCTION_INVOCATION_FAILED` in Vercel's serverless environment specifically when applied to the compiled `PrismaModule`. The fix rewrites `prisma.module.ts` to apply `@Global()` and `@Module()` decorators as direct function calls instead of using TypeScript's `@` decorator syntax, eliminating `__decorate` from the compiled output entirely.
+  - `apps/api/src/prisma/prisma.module.ts`: rewritten to use `Global()` and `Module()` as direct function expressions instead of `@` decorator syntax
+  - `apps/api/dist/prisma/prisma.module.js`: regenerated compiled output with no `__decorate` helper
+  - Root cause: TypeScript compiler emits `__decorate` helper calls for `@` decorator syntax; this helper pattern crashes under Vercel's Rust-based Node.js runtime when applied at module level
+
 ### Documentation
 
 - Documentación formal de la incidencia de Lambda crash: `docs/057_BUGFIX_BACKEND_LAMBDA_CRASH_1_0_DRAFT.md` — cubre las 4 causas raíz (DebugModule huérfana, BotService DI, nft tracing, outputDirectory), fixes aplicados y lecciones aprendidas
