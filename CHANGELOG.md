@@ -71,9 +71,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `apps/api/src/prisma/prisma.module.ts`: rewritten to use `Global()` and `Module()` as direct function expressions instead of `@` decorator syntax
   - `apps/api/dist/prisma/prisma.module.js`: regenerated compiled output with no `__decorate` helper
   - Root cause: TypeScript compiler emits `__decorate` helper calls for `@` decorator syntax; this helper pattern crashes under Vercel's Rust-based Node.js runtime when applied at module level
-  - **Refinement — `Module()` returns `undefined`, causing `Global()` to throw `TypeError`**: The `Module()` decorator in NestJS returns `undefined` (not the target class). When applying `Global()(Module({...})(Class))` as direct function calls, `Global()` received `undefined` instead of the class, causing `Reflect.defineMetadata` to throw `TypeError` (target must be an object). Fixed by adding `|| Class` fallback to the `Module()` call expression.
+    - **Refinement — `Module()` returns `undefined`, causing `Global()` to throw `TypeError`**: The `Module()` decorator in NestJS returns `undefined` (not the target class). When applying `Global()(Module({...})(Class))` as direct function calls, `Global()` received `undefined` instead of the class, causing `Reflect.defineMetadata` to throw `TypeError` (target must be an object). Fixed by adding `|| Class` fallback to the `Module()` call expression.
     - `apps/api/src/prisma/prisma.module.ts`: added `|| PrismaModuleClass` fallback after `Module()` decorator call
     - `apps/api/dist/prisma/prisma.module.js`: regenerated compiled output with the fallback
+
+- **PrismaClientInitializationError "Prisma has detected that this project was built on Vercel" en Lambda**: El método `Ba()` de Prisma 5.22.0 detecta `postinstall: true` + `ciName: "Vercel"` en la configuración generada y lanza un error de caching detection. Se añadió `__internal.configOverride` en PrismaService para establecer `postinstall: false` antes de que `Ba()` se ejecute en el constructor de PrismaClient. Se movió `prisma generate` de `buildCommand` a `installCommand` en `vercel.json` para que los archivos generados sobrevivan al empaquetado Lambda de Vercel. Se restauró `handler.js` al handler NestJS inline correcto (reemplazando el handler de diagnóstico temporal usado durante la investigación).
+  - `apps/api/src/prisma/prisma.service.ts`: añadido `__internal.configOverride` con `postinstall: false` para evitar la detección de Vercel por `Ba()`
+  - `vercel.json`: `prisma generate` movido de `buildCommand` a `installCommand` para persistencia en Lambda
+  - `apps/api/api/handler.js`: restaurado al handler NestJS inline real (removido el handler de prueba temporal)
 
 ### Documentation
 

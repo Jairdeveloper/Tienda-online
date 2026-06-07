@@ -6,13 +6,17 @@ if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
 }
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
+  public readonly prisma: PrismaClient;
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
-    super({
+    this.prisma = new PrismaClient({
       log: ["warn", "error"],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...({ __internal: { configOverride: (config: any) => ({ ...config, postinstall: false }) } } as any),
     });
+    this.logger.log("PrismaClient created");
   }
 
   async onModuleInit(): Promise<void> {
@@ -23,7 +27,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleDestroy(): Promise<void> {
     try {
-      await this.$disconnect();
+      await this.prisma.$disconnect();
     } catch (e) {
       this.logger.warn(
         `Error disconnecting database: ${e instanceof Error ? e.message : String(e)}`,
