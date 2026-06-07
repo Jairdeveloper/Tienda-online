@@ -1,56 +1,78 @@
-// Step-by-step diagnostic — isolates NestJS crash location
+// Static requires for nft tracing — needed for dynamic require(path.join(...)) below
+require("reflect-metadata");
+require("@nestjs/common");
+require("@nestjs/core");
+require("@nestjs/config");
+require("@nestjs/swagger");
+require("@nestjs/platform-express");
+require("helmet");
+require("@prisma/client");
+
 const path = require("path");
 const basedir = path.resolve(__dirname, "..");
 
+if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
+  process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
+}
+
 module.exports = async (req, res) => {
-  const info = {};
+  const info = { steps: [] };
 
-  if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
-    process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
-  }
-
-  // Step 1: require @prisma/client
+  // A: Load and test inline module (works)
   try {
-    const pm = require("@prisma/client");
-    info.step1_require_prisma = "ok";
-    info.prismaClientType = typeof pm.PrismaClient;
-  } catch (e) {
-    info.step1_require_prisma = "error";
-    info.step1_error = e.message;
-    return res.json(info);
-  }
+    const core = require("@nestjs/core");
+    const common = require("@nestjs/common");
+    const config = require("@nestjs/config");
+    const { ExpressAdapter } = require("@nestjs/platform-express");
+    const { CommonModule } = require(path.join(basedir, "dist", "common", "common.module"));
+    const { RedisModule } = require(path.join(basedir, "dist", "redis", "redis.module"));
+    const { PrismaClient } = require("@prisma/client");
+    const { PrismaService } = require(path.join(basedir, "dist", "prisma", "prisma.service"));
 
-  // Step 2: require dist/main
-  try {
-    const m = require(path.join(basedir, "dist", "main"));
-    info.step2_require_main = "ok";
-    info.hasCreateApp = typeof m.createApp;
-  } catch (e) {
-    info.step2_require_main = "error";
-    info.step2_error = e.message;
-    info.step2_code = e.code;
-    return res.json(info);
-  }
+    common.Global()(common.Module({
+      providers: [PrismaService, { provide: PrismaClient, useExisting: PrismaService }],
+      exports: [PrismaService, PrismaClient],
+    })(class MockP {}));
 
-  // Step 3: createApp (without init)
-  let app;
-  try {
-    const m = require(path.join(basedir, "dist", "main"));
-    app = await m.createApp();
-    info.step3_createApp = "ok";
-  } catch (e) {
-    info.step3_createApp = "error";
-    info.step3_error = e.message;
-    return res.json(info);
-  }
-
-  // Step 4: app.init
-  try {
+    class TestA {}
+    common.Module({
+      imports: [config.ConfigModule.forRoot({ isGlobal: true }), RedisModule, CommonModule, MockP],
+      providers: [],
+    })(TestA);
+    const a = new ExpressAdapter();
+    const app = await core.NestFactory.create(TestA, a, { bufferLogs: true });
     await app.init();
-    info.step4_init = "ok";
+    info.steps.push("A_inline_module: ok");
   } catch (e) {
-    info.step4_init = "error";
-    info.step4_error = e.message;
+    info.steps.push("A_inline_module: error=" + String(e.message).substring(0, 200));
+    // Even if error, the Lambda is alive — we can continue testing
+  }
+
+  // B: Now try the REAL compiled PrismaModule (this crashed before)
+  try {
+    const core2 = require("@nestjs/core");
+    const common2 = require("@nestjs/common");
+    const config2 = require("@nestjs/config");
+    const { ExpressAdapter: EA2 } = require("@nestjs/platform-express");
+    const { CommonModule: CM2 } = require(path.join(basedir, "dist", "common", "common.module"));
+    const { RedisModule: RM2 } = require(path.join(basedir, "dist", "redis", "redis.module"));
+    const { PrismaModule: RealPM } = require(path.join(basedir, "dist", "prisma", "prisma.module"));
+
+    // Count how many exports RealPM has
+    info.steps.push("real_module_keys: " + Object.keys(RealPM).join(","));
+    info.steps.push("real_module_type: " + typeof RealPM);
+
+    class TestB {}
+    common2.Module({
+      imports: [config2.ConfigModule.forRoot({ isGlobal: true }), RM2, CM2, RealPM],
+      providers: [],
+    })(TestB);
+    const b = new EA2();
+    const app2 = await core2.NestFactory.create(TestB, b, { bufferLogs: true });
+    await app2.init();
+    info.steps.push("B_real_module: ok");
+  } catch (e) {
+    info.steps.push("B_real_module: error=" + String(e.message).substring(0, 200));
   }
 
   res.json(info);

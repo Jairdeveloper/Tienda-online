@@ -1,6 +1,16 @@
 const path = require("path");
 const __basedir = path.resolve(__dirname, "..");
 
+// Static requires for nft tracing — needed for dynamic require(path.join(...)) below
+require("reflect-metadata");
+require("@nestjs/common");
+require("@nestjs/core");
+require("@nestjs/config");
+require("@nestjs/swagger");
+require("@nestjs/platform-express");
+require("helmet");
+require("@prisma/client");
+
 if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
   process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
 }
