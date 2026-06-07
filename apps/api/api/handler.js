@@ -27,14 +27,16 @@ module.exports = async (req, res) => {
 
       const { RedisModule } = require(path.join(__dirname, "..", "dist", "redis", "redis.module"));
       const { CommonModule } = require(path.join(__dirname, "..", "dist", "common", "common.module"));
+      const { PrismaModule } = require(path.join(__dirname, "..", "dist", "prisma", "prisma.module"));
 
-      // Inline AppModule — NO PrismaModule
+      // Inline AppModule — WITH PrismaModule
       class InlineAppModule {}
       common.Module({
         imports: [
           config.ConfigModule.forRoot({ isGlobal: true, envFilePath: [".env"] }),
           CommonModule,
           RedisModule,
+          PrismaModule,
         ],
         providers: [],
       })(InlineAppModule);
