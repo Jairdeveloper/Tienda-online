@@ -64,7 +64,8 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 015 | `015_ADR_DATABASE_POSTGRESQL_1_0_DRAFT.md`       | decisions | ADR  | DRAFT  | 2026-05-23 |
 | 016 | `016_ADR_AUTH_JWT_RBAC_1_0_DRAFT.md`             | decisions | ADR  | DRAFT  | 2026-05-23 |
 | 017 | `017_ADR_PAYMENTS_PROVIDER_PATTERN_1_0_DRAFT.md` | decisions | ADR  | DRAFT  | 2026-05-23 |
-
+| 058 | `058_ADR_DEPLOY_FLOW_VERCEL_1_0_DRAFT.md`        | decisions | ADR  | DRAFT  | 2026-06-07 |
+ 
 ## PRM (Prompts)
 
 | ID  | Archivo                             | Área    | Tipo | Estado | Creado     |

@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Variables de entorno: `API_BASE_URL` (default `http://localhost:3000`) para configurar la URL base de NestJS.
   - Sin dependencias externas — solo `urllib.request` de stdlib.
 
+- **`deploy:preview` and `deploy:prod` npm scripts**: Added automated Vercel deployment workflow scripts to root `package.json`. `deploy:preview` deploys the current branch to a preview environment; `deploy:prod` promotes the preview to production after manual approval.
+- **ADR — Vercel deployment flow**: Created `docs/decisions/058_ADR_DEPLOY_FLOW_VERCEL_1_0_DRAFT.md` documenting the preview → production deployment workflow, including environment configuration, promotion gates, and rollback strategy.
+- **ID registry updated**: Added entry `058` to `docs/REGISTRO_IDS.md` for the new ADR.
+
 ### Fixed
 
 - **PrismaService ya no extiende PrismaClient — Proxy lazy para evitar SEGFAULT en Vercel Lambda**: La llamada `new PrismaClient()` causaba SEGFAULT en el entorno Lambda de Vercel durante `NestFactory.create(AppModule)`, incluso con `PRISMA_CLIENT_ENGINE_TYPE=library` activado. La causa raíz era que el constructor de PrismaClient inicializa el engine WASM en el momento de la instanciación, y ese proceso crashea en Lambda. La solución reemplaza la herencia directa (`extends PrismaClient`) con un Proxy que difiere la creación de PrismaClient hasta el primer acceso a una propiedad (e.g. `this.prisma.user.findMany()`), moviendo toda inicialización —incluyendo carga del engine— fuera del bootstrap de NestJS.
@@ -67,6 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `apps/api/src/prisma/prisma.module.ts`: rewritten to use `Global()` and `Module()` as direct function expressions instead of `@` decorator syntax
   - `apps/api/dist/prisma/prisma.module.js`: regenerated compiled output with no `__decorate` helper
   - Root cause: TypeScript compiler emits `__decorate` helper calls for `@` decorator syntax; this helper pattern crashes under Vercel's Rust-based Node.js runtime when applied at module level
+  - **Refinement — `Module()` returns `undefined`, causing `Global()` to throw `TypeError`**: The `Module()` decorator in NestJS returns `undefined` (not the target class). When applying `Global()(Module({...})(Class))` as direct function calls, `Global()` received `undefined` instead of the class, causing `Reflect.defineMetadata` to throw `TypeError` (target must be an object). Fixed by adding `|| Class` fallback to the `Module()` call expression.
+    - `apps/api/src/prisma/prisma.module.ts`: added `|| PrismaModuleClass` fallback after `Module()` decorator call
+    - `apps/api/dist/prisma/prisma.module.js`: regenerated compiled output with the fallback
 
 ### Documentation
 

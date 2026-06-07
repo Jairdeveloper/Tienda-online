@@ -19,7 +19,9 @@
     "db:migrate:dev": "cd apps/api && npm run db:migrate:dev",
     "db:migrate:deploy": "cd apps/api && npm run db:migrate:deploy",
     "db:migrate:status": "cd apps/api && npm run db:migrate:status",
-    "db:seed": "cd apps/api && npm run db:seed"
+    "db:seed": "cd apps/api && npm run db:seed",
+    "deploy:preview": "git push origin main && npx vercel --token $VERCEL_TOKEN",
+    "deploy:prod": "npx vercel --prod --token $VERCEL_TOKEN"
   },
   "engines": {
     "node": ">=22.0.0",
