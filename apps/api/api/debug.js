@@ -1,12 +1,41 @@
 const path = require("path");
+const fs = require("fs");
 const basedir = path.resolve(__dirname, "..");
 
 if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
   process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
 }
 
+function listTree(dir, prefix = "") {
+  const entries = [];
+  try {
+    const names = fs.readdirSync(dir);
+    for (const name of names.sort()) {
+      const full = path.join(dir, name);
+      try {
+        const stat = fs.statSync(full);
+        if (stat.isDirectory()) {
+          entries.push(prefix + name + "/");
+          entries.push(...listTree(full, prefix + "  "));
+        } else {
+          entries.push(prefix + name + " (" + stat.size + "b)");
+        }
+      } catch {}
+    }
+  } catch {}
+  return entries;
+}
+
 module.exports = async (req, res) => {
-  const info = { steps: [] };
+  const info = { steps: [], fs: {} };
+
+  // Step 0: List filesystem for diagnostics
+  try {
+    info.fs.taskdir = listTree("/var/task/apps", "");
+    info.fs.taskdir_count = info.fs.taskdir.length;
+  } catch (e) {
+    info.fs.taskdir_error = e.message;
+  }
 
   // A: Load and test inline module (works)
   try {
