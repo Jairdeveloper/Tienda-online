@@ -18,21 +18,24 @@
       "src": "apps/api/api/handler.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": "apps/api/dist/**"
+        "includeFiles": "apps/api/dist/**",
+        "bundle": false
       }
     },
     {
       "src": "apps/api/api/test.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": "apps/api/dist/**"
+        "includeFiles": "apps/api/dist/**",
+        "bundle": false
       }
     },
     {
       "src": "apps/api/api/debug.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": "apps/api/dist/**"
+        "includeFiles": "apps/api/dist/**",
+        "bundle": false
       }
     }
   ],
