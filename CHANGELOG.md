@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Vercel Lambda filesystem diagnostics in debug endpoint**: `apps/api/api/debug.js` extended with filesystem introspection to diagnose why `includeFiles: "apps/api/dist/**"` in `vercel.json` does not bundle NestJS compiled dist files into the serverless function bundle, causing production 500 errors on `/api/v1/*` endpoints.
+  - Added `fs` require for filesystem operations
+  - Added `listTree()` function that recursively walks a directory listing files with their sizes (human-readable formatting via `toLocaleString()`)
+  - Added filesystem scan of `/var/task/apps` on every request to `GET /debug`, capturing the full directory tree including `dist/` presence and contents
+  - Result stored in `info.fs.taskdir` field of the JSON response for remote inspection
+  - Enables direct verification of which files actually land in the Lambda bundle during Vercel deployment
+
 - **Wave 4 — Frontend Chat Widget**: Componente React de chat interactivo integrado con los endpoints del bot B2B via proxy NestJS. Maneja todos los estados conversacionales y se inserta contextualmente en todas las páginas del frontend.
   - `apps/web/src/api/bot.ts`: API client con `sendBotMessage()`, `confirmBotAction()`, `getBotStatus()` — funciones tipadas para interactuar con los endpoints `/bot/messages`, `/bot/confirm` y `/bot/status`.
   - `apps/web/src/hooks/useBotChat.ts`: Hook personalizado que gestiona el estado completo del chat (messages, status, sessionId) con soporte para loading, error, requiresAuth, requiresConfirmation. Genera sessionId via `crypto.randomUUID()` y lo persiste en `sessionStorage`.
