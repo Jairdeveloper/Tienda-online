@@ -18,12 +18,26 @@ module.exports = async (req, res) => {
     }
   };
 
+  // Use 200 for all responses (including errors) because Vercel Hobby
+  // intercepts 5xx bodies and replaces them with generic HTML pages.
+  const respond = (body) => send(200, body);
+
   if (req.method === "GET" && req.url && req.url.includes("/bot/status")) {
     return send(200, { status: "bypass_ok" });
   }
 
   if (!app) {
     try {
+      // Diag: check generated config
+      let diag = {};
+      try {
+        const fs = require("fs");
+        const cfgPath = path.join(__dirname, "..", "node_modules", ".prisma", "client", "index.js");
+        const lines = fs.readFileSync(cfgPath, "utf8").split("\n");
+        diag.lines = lines.filter(l => l.includes("postinstall") || l.includes("ciName")).map(l => l.trim());
+        console.log("[DIAG]", diag.lines);
+      } catch (e) { diag.error = e.message; }
+
       const core = require("@nestjs/core");
       const common = require("@nestjs/common");
       const config = require("@nestjs/config");
@@ -81,7 +95,7 @@ module.exports = async (req, res) => {
       expressInstance.get("/direct-test", (_req2, _res2) => _res2.json({ status: "direct_ok" }));
       app = nestApp;
     } catch (e) {
-      return send(500, { error: "init_failed", message: e.message, stack: (e.stack || "").split("\n").slice(0, 5) });
+      return respond({ error: "init_failed", message: e.message, stack: (e.stack || "").split("\n").slice(0, 5), diag });
     }
   }
 
@@ -92,6 +106,6 @@ module.exports = async (req, res) => {
       instance(req, res);
     });
   } catch (e) {
-    send(500, { error: "dispatch_error", message: e.message });
+    respond({ error: "dispatch_error", message: e.message });
   }
 };

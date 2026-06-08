@@ -1,5 +1,5 @@
 {
-  "installCommand": "cd apps/api && npm ci --include=dev && PRISMA_CLIENT_ENGINE_TYPE=library npx prisma generate && cd ../../apps/web && npm ci --include=dev",
+  "installCommand": "cd apps/api && PRISMA_SKIP_POSTINSTALL_GENERATE=true npm ci --include=dev && PRISMA_CLIENT_ENGINE_TYPE=library npx prisma generate && node api/fix-prisma-config.js && cd ../../apps/web && npm ci --include=dev",
   "buildCommand": "rm -rf apps/api/dist && npm run build",
   "outputDirectory": "apps/web/dist",
   "builds": [
