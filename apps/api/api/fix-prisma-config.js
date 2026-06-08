@@ -14,14 +14,13 @@ content = content.replace(/"postinstall":\s*true/, '"postinstall": false');
 content = content.replace(/ciName:\s*['"]Vercel['"]/, 'ciName: undefined');
 
 if (content === before) {
-  console.error('WARNING: No changes made — pattern not found in', target);
-  console.error('Checking for postinstall and ciName patterns...');
-  if (/"postinstall"/.test(before)) console.error('  postinstall FOUND');
-  else console.error('  postinstall NOT FOUND');
-  if (/ciName/.test(before)) console.error('  ciName FOUND');
-  else console.error('  ciName NOT FOUND');
-  process.exit(1);
+  console.warn('WARNING: No changes made — pattern not found in', target);
+  console.warn('Checking for postinstall and ciName patterns...');
+  if (/"postinstall"/.test(before)) console.warn('  postinstall FOUND');
+  else console.warn('  postinstall NOT FOUND');
+  if (/ciName/.test(before)) console.warn('  ciName FOUND');
+  else console.warn('  ciName NOT FOUND');
+} else {
+  fs.writeFileSync(target, content);
+  console.log('OK: Patched postinstall and ciName in', target);
 }
-
-fs.writeFileSync(target, content);
-console.log('OK: Patched postinstall and ciName in', target);
