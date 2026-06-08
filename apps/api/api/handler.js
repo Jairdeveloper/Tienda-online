@@ -28,74 +28,21 @@ module.exports = async (req, res) => {
 
   if (!app) {
     try {
-      // Diag: check generated config
-      let diag = {};
-      try {
-        const fs = require("fs");
-        const cfgPath = path.join(__dirname, "..", "node_modules", ".prisma", "client", "index.js");
-        const lines = fs.readFileSync(cfgPath, "utf8").split("\n");
-        diag.lines = lines.filter(l => l.includes("postinstall") || l.includes("ciName")).map(l => l.trim());
-        console.log("[DIAG]", diag.lines);
-      } catch (e) { diag.error = e.message; }
-
-      const core = require("@nestjs/core");
-      const common = require("@nestjs/common");
-      const config = require("@nestjs/config");
       const { ExpressAdapter } = require("@nestjs/platform-express");
-      const { SwaggerModule, DocumentBuilder } = require("@nestjs/swagger");
-      const helmet = require("helmet");
-      const { randomUUID } = require("crypto");
-
-      const { AppModule } = require(path.join(__dirname, "..", "dist", "app.module"));
-      const { HttpExceptionFilter } = require(path.join(__dirname, "..", "dist", "common", "filters", "http-exception.filter"));
-      const { JsonLoggerService } = require(path.join(__dirname, "..", "dist", "common", "logger", "json-logger.service"));
-      const { validationSchema } = require(path.join(__dirname, "..", "dist", "config", "env.validation"));
+      const { createApp } = require(path.join(__dirname, "..", "dist", "main"));
 
       const adapter = new ExpressAdapter();
-      const nestApp = await core.NestFactory.create(AppModule, adapter, { bufferLogs: true });
-      const configService = nestApp.get(config.ConfigService);
-      const logger = nestApp.get(JsonLoggerService);
-      nestApp.useLogger(logger);
-      nestApp.use(helmet());
-      nestApp.use((req2, res2, next) => {
-        const requestIdHeader = req2.headers["x-request-id"];
-        const requestId = Array.isArray(requestIdHeader) ? requestIdHeader[0] : (requestIdHeader ?? randomUUID());
-        const startedAt = Date.now();
-        req2.requestId = requestId;
-        res2.setHeader("x-request-id", requestId);
-        res2.on("finish", () => {
-          logger.log({ event: "http_request", requestId, method: req2.method, path: req2.originalUrl, statusCode: res2.statusCode, durationMs: Date.now() - startedAt });
-        });
-        next();
-      });
-      const apiPrefix = configService.get("API_PREFIX", "api/v1");
-      nestApp.setGlobalPrefix(apiPrefix);
-      nestApp.useGlobalPipes(new common.ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
-      nestApp.useGlobalFilters(new HttpExceptionFilter(logger));
-      nestApp.enableShutdownHooks();
-      const corsEnabled = configService.get("CORS_ENABLED", "true");
-      if (["1", "true", "yes", "on"].includes((corsEnabled || "").toLowerCase())) {
-        const origins = (configService.get("CORS_ORIGIN", "") || "").split(",").map((o) => o.trim()).filter(Boolean);
-        nestApp.enableCors({ origin: origins.length > 0 ? origins : false, credentials: true });
-      }
-      const swaggerEnabled = configService.get("SWAGGER_ENABLED", "true");
-      if (["1", "true", "yes", "on"].includes((swaggerEnabled || "").toLowerCase())) {
-        const sc = new DocumentBuilder()
-          .setTitle(configService.get("SWAGGER_TITLE", "Tienda API"))
-          .setDescription(configService.get("SWAGGER_DESCRIPTION", "Backend Tienda Online"))
-          .setVersion(configService.get("SWAGGER_VERSION", "1.0.0"))
-          .addBearerAuth({ type: "http", scheme: "bearer", bearerFormat: "JWT" }, "bearer")
-          .build();
-        const document = SwaggerModule.createDocument(nestApp, sc);
-        const swaggerPath = configService.get("SWAGGER_PATH", "docs");
-        SwaggerModule.setup(apiPrefix + "/" + swaggerPath, nestApp, document);
-      }
-      const httpAdapter = nestApp.getHttpAdapter();
-      const expressInstance = httpAdapter.getInstance();
-      expressInstance.get("/direct-test", (_req2, _res2) => _res2.json({ status: "direct_ok" }));
-      app = nestApp;
+      app = await createApp(adapter);
+
+      // Register a direct test route bypassing NestJS routing
+      const instance = adapter.getInstance();
+      instance.get("/direct-test", (_req2, _res2) => _res2.json({ status: "direct_ok" }));
     } catch (e) {
-      return respond({ error: "init_failed", message: e.message, stack: (e.stack || "").split("\n").slice(0, 5), diag });
+      return respond({
+        error: "init_failed",
+        message: e.message,
+        stack: (e.stack || "").split("\n").slice(0, 5),
+      });
     }
   }
 

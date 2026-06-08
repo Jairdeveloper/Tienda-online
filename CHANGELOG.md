@@ -106,6 +106,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `apps/api/api/fix-prisma-config.js`: Cambiado `process.exit(1)` por `console.warn()` cuando no encuentra el patrón, para no romper la cadena `&&` del installCommand
   - Causa raíz: `outputDirectory` + `includeFiles` son incompatibles en Vercel — los patrones glob se resuelven relativos al outputDirectory
 
+- **Vercel Lambda 404 en todas las rutas API tras `bundle: false` — handler.js duplicaba inicialización NestJS inline en vez de reusar `createApp()`**: Tras configurar `bundle: false` en `vercel.json` para preservar `__dirname`, todas las rutas `api/v1/*` retornaban `Cannot GET` (Express 404). El `_test` endpoint demostraba que `createApp()` desde `dist/main` inicializaba correctamente todos los módulos. El error era que `handler.js` duplicaba la lógica de inicialización inline (helmet, x-request-id middleware, global prefix, validation pipe, exception filter, CORS, Swagger, shutdown hooks, logger) en vez de importar y delegar en la función `createApp(adapter)` probada desde el bootstrap de NestJS.
+  - `apps/api/api/handler.js`: Rewrite completo para importar `createApp` desde `dist/main` y delegar toda la inicialización NestJS a esa función probada
+  - Código inline eliminado: configuración de helmet, middleware x-request-id, global prefix, validation pipe, exception filter, CORS, Swagger, shutdown hooks y logger
+  - Mecanismos preservados: wrapper `send`/`respond` para compatibilidad Vercel Hobby, bypass de `/bot/status`, ruta `/direct-test` para diagnóstico
+  - Causa raíz: la inicialización inline duplicada en `handler.js` no registraba las rutas correctamente porque NestJS routing se configura durante `NestFactory.create()` + `app.listen()` vía `createApp()`, no repitiendo la configuración manual de middleware
+
 ### Documentation
 
 - Documentación formal de la incidencia de Lambda crash: `docs/057_BUGFIX_BACKEND_LAMBDA_CRASH_1_0_DRAFT.md` — cubre las 4 causas raíz (DebugModule huérfana, BotService DI, nft tracing, outputDirectory), fixes aplicados y lecciones aprendidas
