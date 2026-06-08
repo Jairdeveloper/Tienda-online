@@ -80,10 +80,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `vercel.json`: `prisma generate` movido de `buildCommand` a `installCommand` para persistencia en Lambda
   - `apps/api/api/handler.js`: restaurado al handler NestJS inline real (removido el handler de prueba temporal)
 
+- **Restaurado `extends PrismaClient` en PrismaService con parcheo postinstall de Prisma para Vercel Lambda**: Reemplaza el enfoque de Proxy lazy por `extends PrismaClient` directo más `__internal.configOverride` que establece `postinstall: false` antes de la inicialización del engine, eliminando el `PrismaClientInitializationError` en Vercel. El fix actúa en 3 capas: (1) `configOverride` en PrismaService parchea `postinstall: false` antes de que `Ba()` se ejecute, (2) `fix-prisma-config.js` parchea directamente el archivo generado en installCommand, (3) `PRISMA_SKIP_POSTINSTALL_GENERATE=true` evita generación doble durante npm install. Adicionalmente se elimina `apps/api/vercel.json` que causaba conflictos de monorepo en el despliegue.
+  - `apps/api/src/prisma/prisma.service.ts`: Restaurado `extends PrismaClient`, añadido `__internal.configOverride` con `postinstall: false`
+  - `apps/api/api/handler.js`: Añadido bloque de diagnóstico del config generado de Prisma, cambiado `send(500)` a `respond(200)` para evitar intercepción de Vercel Hobby
+  - `vercel.json`: `installCommand` actualizado con `PRISMA_SKIP_POSTINSTALL_GENERATE=true` y ejecución de `node api/fix-prisma-config.js` tras `prisma generate`
+  - `apps/api/api/fix-prisma-config.js` (nuevo): Script que parchea `"postinstall": true` → `false` y `ciName: "Vercel"` → `undefined` en el archivo generado de Prisma
+  - `apps/api/api/patch-prisma.sh` (nuevo): Script auxiliar de sed patch
+  - `apps/api/vercel.json` (eliminado): Configuración anidada que causaba conflictos de monorepo en Vercel
+  - Causa raíz: `Ba()` de Prisma 5.22.0 detecta `ciName: "Vercel"` + `postinstall: true` y lanza `PrismaClientInitializationError` en Lambda
+
 ### Documentation
 
 - Documentación formal de la incidencia de Lambda crash: `docs/057_BUGFIX_BACKEND_LAMBDA_CRASH_1_0_DRAFT.md` — cubre las 4 causas raíz (DebugModule huérfana, BotService DI, nft tracing, outputDirectory), fixes aplicados y lecciones aprendidas
   - Added Runtime Error Diagnostic section to `.opencode/agents/dev-ops.md` for diagnosing 404/500 errors in production
+- Documentación formal del bug de Prisma en Vercel Lambda y fixes aplicados: `docs/059_BUGFIX_BACKEND_PRISMA_VERCEL_1_0_DRAFT.md` — cubre las 3 capas de fix (configOverride, fix-prisma-config.js, PRISMA_SKIP_POSTINSTALL_GENERATE), causas raíz y lecciones aprendidas
 
 ---
 
