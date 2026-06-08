@@ -89,6 +89,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `apps/api/vercel.json` (eliminado): Configuración anidada que causaba conflictos de monorepo en Vercel
   - Causa raíz: `Ba()` de Prisma 5.22.0 detecta `ciName: "Vercel"` + `postinstall: true` y lanza `PrismaClientInitializationError` en Lambda
 
+- **outputDirectory conflict con includeFiles en Vercel**: `"outputDirectory": "apps/web/dist"` en `vercel.json` causaba que `includeFiles: "apps/api/dist/**"` resolviera incorrectamente porque Vercel busca los patrones glob relativos al outputDirectory. Esto impedía que los archivos compilados de NestJS se incluyeran en el Lambda, provocando `FUNCTION_INVOCATION_FAILED`.
+  - `vercel.json`: Eliminado `outputDirectory` para que los patrones `includeFiles` resuelvan correctamente
+  - `apps/api/api/fix-prisma-config.js`: Cambiado `process.exit(1)` por `console.warn()` cuando no encuentra el patrón, para no romper la cadena `&&` del installCommand
+  - Causa raíz: `outputDirectory` + `includeFiles` son incompatibles en Vercel — los patrones glob se resuelven relativos al outputDirectory
+
 ### Documentation
 
 - Documentación formal de la incidencia de Lambda crash: `docs/057_BUGFIX_BACKEND_LAMBDA_CRASH_1_0_DRAFT.md` — cubre las 4 causas raíz (DebugModule huérfana, BotService DI, nft tracing, outputDirectory), fixes aplicados y lecciones aprendidas
