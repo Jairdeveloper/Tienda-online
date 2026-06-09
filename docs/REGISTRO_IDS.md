@@ -127,6 +127,7 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | ID  | Archivo                                                | Área    | Tipo         | Estado | Creado     |
 | --- | ------------------------------------------------------ | ------- | ------------ | ------ | ---------- |
 | 061 | `061_INVESTIGATION_BACKEND_VERCEL_DEPLOY_1_0_DRAFT.md` | backend | INVESTIGATION | DRAFT | 2026-06-08 |
+| 062 | `062_PLAYBOOK_BACKEND_VERCEL_DEPLOY_1_0_DRAFT.md` | backend | PLAYBOOK | DRAFT | 2026-06-09 |
 
 ---
 

@@ -3,9 +3,13 @@ name: CI
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 env:
   NODE_VERSION: 22
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   test:
@@ -67,3 +71,79 @@ jobs:
           DATABASE_URL: postgresql://tienda:tienda_dev@localhost:5432/tienda_online?schema=public
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: ci-jwt-secret-change-me
+
+  # ────────────────────────────────────────────────────────────────────────────
+  #  Deploy + Health Check (solo en push a main)
+  #  ────────────────────────────────────────────────────────────────────────────
+  #  Después de que los tests pasen, despliega a Vercel y verifica que todos
+  #  los endpoints respondan correctamente. Si el health check falla, revierte
+  #  el deployment automáticamente.
+  #
+  #  Requisitos de Secrets:
+  #    VERCEL_TOKEN    — Token de Vercel (generado desde Vercel Dashboard)
+  #    VERCEL_ORG_ID   — ID de la organización en Vercel
+  #    VERCEL_PROJECT_ID — ID del proyecto en Vercel
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel (Producción)
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "DEPLOY_URL=$URL" >> $GITHUB_OUTPUT
+          echo "Desplegado en: $URL"
+
+      - name: Health Check Post-Deploy
+        id: healthcheck
+        run: |
+          URL="${{ steps.deploy.outputs.DEPLOY_URL }}"
+          echo "Verificando deploy en $URL"
+          bash scripts/verify-deploy.sh "$URL"
+          echo "✅ Todos los checks post-deploy pasaron"
+
+      - name: Rollback on Failure
+        if: failure() && steps.deploy.outcome == 'success'
+        run: |
+          echo "❌ Health checks fallaron. Revirtiendo deployment..."
+          npx vercel rollback --token=${{ secrets.VERCEL_TOKEN }}
+          echo "⏮️  Rollback completado. El deployment anterior está activo."
+
+      - name: Notify Success
+        if: success()
+        run: |
+          URL="${{ steps.deploy.outputs.DEPLOY_URL }}"
+          echo "✅ Deploy exitoso en $URL"
+          echo "   Health checks: OK"
+          echo ""
+          echo "   Producción: https://tienda-online-jair08-zped08s-projects.vercel.app"
+          echo "   Preview:    $URL"
+
+      - name: Verify Production Alias
+        if: success()
+        run: |
+          echo "Verificando alias de producción..."
+          PROD_URL="https://tienda-online-jair08-zped08s-projects.vercel.app"
+          curl -sf "$PROD_URL/_health" > /dev/null \
+            && echo "✅ Alias de producción responde correctamente" \
+            || echo "⚠️  Alias de producción no responde. Usar 'vercel --prod --force' para promocionar."
