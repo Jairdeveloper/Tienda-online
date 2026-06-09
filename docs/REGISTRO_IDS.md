@@ -120,6 +120,13 @@ summary: "Registro central de IDs asignados a documentos en docs/. Cada ID es ú
 | 041 | `041_BUGFIX_BACKEND_INIT_1_0_DRAFT.md` | backend | BUGFIX | ACTIVE | 2026-06-01 |
 | 057 | `057_BUGFIX_BACKEND_LAMBDA_CRASH_1_0_DRAFT.md` | backend | BUGFIX | DRAFT | 2026-06-06 |
 | 059 | `059_BUGFIX_BACKEND_PRISMA_VERCEL_1_0_DRAFT.md` | backend | BUGFIX | DRAFT | 2026-06-08 |
+| 060 | `060_BUGFIX_BACKEND_INCLUDEFILES_1_0_DRAFT.md` | backend | BUGFIX | DRAFT | 2026-06-08 |
+
+## INVESTIGATION
+
+| ID  | Archivo                                                | Área    | Tipo         | Estado | Creado     |
+| --- | ------------------------------------------------------ | ------- | ------------ | ------ | ---------- |
+| 061 | `061_INVESTIGATION_BACKEND_VERCEL_DEPLOY_1_0_DRAFT.md` | backend | INVESTIGATION | DRAFT | 2026-06-08 |
 
 ---
 
