@@ -44,8 +44,7 @@ interface MockResponse {
   end: (chunk?: string | Buffer) => void;
   json: (data: Record<string, unknown>) => void;
   setHeader: (key: string, value: string) => void;
-  readonly status: number;
-  readonly headers: Record<string, string>;
+  status: (code: number) => MockResponse;
 }
 
 function createMockReqRes(
@@ -60,8 +59,11 @@ function createMockReqRes(
     _body: null,
     _chunks: chunks,
     body: null,
-    get status() { return this._status; },
-    get headers() { return this._headers; },
+
+    status(this: MockResponse, code: number) {
+      this._status = code;
+      return this;
+    },
 
     writeHead(this: MockResponse, status: number, headers?: Record<string, string>) {
       this._status = status;
@@ -135,7 +137,7 @@ describe('Vercel Lambda Endpoints (e2e)', () => {
     it('debe responder 200 con {"status":"ok"}', async () => {
       const { req, res } = createMockReqRes('/_health');
       await handler!(req, res);
-      expect(res.status).toBe(200);
+      expect(res._status).toBe(200);
       expect(res.body).toMatchObject({ status: 'ok' });
     });
 
@@ -165,7 +167,7 @@ describe('Vercel Lambda Endpoints (e2e)', () => {
     it('debe responder 200 con {"status":"ok"}', async () => {
       const { req, res } = createMockReqRes('/_diag');
       await handler!(req, res);
-      expect(res.status).toBe(200);
+      expect(res._status).toBe(200);
       expect(res.body).toMatchObject({ status: 'ok' });
     });
 
