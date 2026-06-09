@@ -38,15 +38,14 @@ interface MockResponse {
   _headers: Record<string, string>;
   _body: string | null;
   _chunks: Buffer[];
-  status: number;
-  headers: Record<string, string>;
   body: Record<string, unknown> | null;
   writeHead: (status: number, headers?: Record<string, string>) => MockResponse;
   write: (chunk: string | Buffer) => boolean;
   end: (chunk?: string | Buffer) => void;
   json: (data: Record<string, unknown>) => void;
-  status: (code: number) => MockResponse;
   setHeader: (key: string, value: string) => void;
+  readonly status: number;
+  readonly headers: Record<string, string>;
 }
 
 function createMockReqRes(
@@ -60,9 +59,9 @@ function createMockReqRes(
     _headers: {},
     _body: null,
     _chunks: chunks,
-    status: 200,
-    headers: {},
     body: null,
+    get status() { return this._status; },
+    get headers() { return this._headers; },
 
     writeHead(this: MockResponse, status: number, headers?: Record<string, string>) {
       this._status = status;
@@ -93,28 +92,10 @@ function createMockReqRes(
       this._headers['content-type'] = 'application/json';
     },
 
-    status(this: MockResponse, code: number) {
-      this._status = code;
-      return this;
-    },
-
     setHeader(this: MockResponse, key: string, value: string) {
       this._headers[key] = value;
     },
   };
-
-  // Re-define getters now that methods are assigned
-  Object.defineProperty(res, 'status', {
-    get() {
-      return res._status;
-    },
-  });
-
-  Object.defineProperty(res, 'headers', {
-    get() {
-      return res._headers;
-    },
-  });
 
   const req: Record<string, unknown> = {
     url,
