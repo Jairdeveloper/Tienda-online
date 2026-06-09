@@ -184,6 +184,95 @@ See `algoritmos/propuesta-convencion-documentacion.md` for full details.
 - Before any push operation, the workflow-agent MUST invoke `changelog-writer` to document the changes
 - After push, verify that `CHANGELOG.md` was committed alongside the code changes
 
+## Git Conventions
+
+### `[build:ok]` — Build local exitoso
+
+Después de ejecutar `npm run build` (o `npm run build:api` / `npm run build:web`) localmente y que pase sin errores, el commit debe terminar su mensaje con `[build:ok]`:
+
+```bash
+git commit -m "fix: corregir lockfile mismatch en apps/api [build:ok]"
+```
+
+El agente `dev-ops` (`.opencode/agents/dev-ops.md`) busca este marcador con `git log --oneline --grep="\[build:ok\]"` para encontrar el último punto estable de referencia al diagnosticar regresiones de build.
+
+### `[deploy:ok]` — Deploy exitoso en Vercel
+
+Después de un deploy exitoso en Vercel, verificado contra los siguientes endpoints en la URL de producción o preview:
+
+```bash
+curl -sf https://<url>/_health
+curl -sf https://<url>/_diag
+curl -sf https://<url>/api/v1/health
+curl -sf -X POST https://<url>/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@tienda.local","password":"Admin123!"}'
+```
+
+El commit debe marcarse con `[deploy:ok]`. Separado de `[build:ok]` que solo verifica build local, `[deploy:ok]` verifica que el deploy en Vercel funciona correctamente (handler.js, Prisma, rutas NestJS, autenticación).
+
+Uso:
+```bash
+git commit -m "feat: agregar endpoint de health check mejorado [deploy:ok]"
+```
+
+**Ambos marcadores pueden combinarse** si el commit incluye cambios que requieren verificar build local y deploy:
+```bash
+git commit -m "feat: nuevo endpoint de catálogo [build:ok] [deploy:ok]"
+```
+
+---
+
+## Vercel Deploy
+
+### Staging Environment
+
+El proyecto utiliza **preview deployments automáticos de Vercel** para cada push a cualquier rama:
+
+| Entorno | Rama | Comando | URL |
+|---------|------|---------|-----|
+| Preview (PR) | Cualquier rama de PR | `vercel` (push automático) | `https://<project>-git-<branch>-<scope>.vercel.app` |
+| Staging | `main` (previo a prod) | `vercel` (push automático) | `https://<project>-git-main-<scope>.vercel.app` |
+| Producción | `main` | `vercel --prod` | `https://<project>.vercel.app` |
+
+**Flujo de staging recomendado:**
+
+1. **Push a PR** → Vercel crea preview deployment automático → Verificar endpoints con `scripts/verify-deploy.sh <preview-url>`
+2. **Merge a `main`** → Vercel crea preview deployment en `git-main` → Verificar con `scripts/verify-deploy.sh` antes de promover
+3. **Promover a producción** → `vercel --prod` (o automático si está configurado) → Verificar con `scripts/verify-deploy.sh`
+
+**URL de staging conocida:**
+`https://tienda-online-git-main-zped08s-projects.vercel.app`
+
+### Production Alias
+
+**Problema conocido:** La URL de producción (`https://tienda-online-jair08-zped08s-projects.vercel.app`) puede no reflejar los nuevos deploys si el alias de producción no se promociona automáticamente.
+
+**Causas posibles:**
+1. La rama `main` no está configurada como rama de producción en el Dashboard de Vercel
+2. GitHub Actions deploy sin flag `--prod`
+3. Alias de producción desvinculado o mal configurado
+
+**Verificación:**
+```bash
+# Listar alias del proyecto
+vercel alias ls
+
+# Ver la URL apuntada por el alias de producción
+curl -sI https://tienda-online-jair08-zped08s-projects.vercel.app/_health | head -5
+```
+
+**Fix si el alias no se actualiza:**
+```bash
+# Forzar deploy a producción
+vercel --prod --force
+```
+
+**Configuración recomendada en Vercel Dashboard:**
+- Git Branch: `main` como rama de producción
+- Auto-promote: Habilitado (los deploys desde `main` se promocionan automáticamente a producción)
+- Si auto-promote falla, usar `vercel --prod --force` como workaround
+
 ## ⚠️ Critical: Node.js Safety
 
 Nunca ejecutar Node.js automáticamente. Todo `npm`, `node`, `prisma`, `jest`
