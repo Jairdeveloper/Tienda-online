@@ -106,74 +106,42 @@ function createMockReqRes(
   return { req, res };
 }
 
-// ─── Suite de tests ──────────────────────────────────────────────────────
+// ─── Helpers para cargar Lambdas standalone ─────────────────────────────
+
+function loadHandler(relPath: string): ((req: any, res: any) => Promise<void>) | undefined {
+  try {
+    return require(relPath);
+  } catch {
+    return undefined;
+  }
+}
 
 describe('Vercel Lambda Endpoints (e2e)', () => {
-  let app: INestApplication;
-  let healthHandler: ((req: any, res: any) => Promise<void>) | undefined;
-  let diagHandler: ((req: any, res: any) => Promise<void>) | undefined;
-
-  beforeAll(async () => {
-    // ── Inicializar NestJS app para los tests de rutas API ──
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(ThrottlerStorage)
-      .useValue({ increment: () => Promise.resolve({ totalHits: 0, timeToExpire: 0 }) })
-      .compile();
-
-    app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api/v1');
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
-    );
-    await app.init();
-    await ensureDbAndRedis(app);
-
-    // ── Cargar handlers Lambda standalone ──
-    // NOTA: Estos require() resuelven desde apps/api/dist. Ejecutar después de
-    // `npm run build` para que el compilado de TypeScript esté disponible.
-    try {
-      healthHandler = require('../api/health');
-    } catch {
-      // No disponible si el build no se ha ejecutado; los tests de Lambda
-      // standalone se saltarán automáticamente.
-    }
-    try {
-      diagHandler = require('../api/diagnostic');
-    } catch {
-      // ídem
-    }
-  });
-
-  afterAll(async () => {
-    await app.close();
-  });
-
   // ═══════════════════════════════════════════════════════════════════════
   //  Standalone Lambdas (_health, _diag)
   //  ────────────────────────────────────────────────
-  //  Estos endpoints los sirve Vercel directamente desde health.js y
-  //  diagnostic.js. Se prueban importando el módulo y simulando req/res.
+  //  No requieren DB, Redis ni NestJS. Se prueban importando el módulo
+  //  directamente y simulando req/res.
   // ═══════════════════════════════════════════════════════════════════════
 
   describe('GET /_health → health.js (standalone Lambda)', () => {
+    let handler: ((req: any, res: any) => Promise<void>) | undefined;
+
+    beforeAll(() => { handler = loadHandler('../api/health'); });
     beforeEach(() => {
-      if (!healthHandler) {
-        pending('health.js no disponible. Ejecutar `npm run build` primero.');
-      }
+      if (!handler) pending('health.js no disponible. Ejecutar `npm run build` primero.');
     });
 
     it('debe responder 200 con {"status":"ok"}', async () => {
       const { req, res } = createMockReqRes('/_health');
-      await healthHandler!(req, res);
+      await handler!(req, res);
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ status: 'ok' });
     });
 
     it('debe incluir timestamp en la respuesta', async () => {
       const { req, res } = createMockReqRes('/_health');
-      await healthHandler!(req, res);
+      await handler!(req, res);
       expect(res.body).toHaveProperty('time');
       expect(typeof (res.body as Record<string, unknown>).time).toBe('number');
     });
@@ -181,28 +149,29 @@ describe('Vercel Lambda Endpoints (e2e)', () => {
     it('debe responder rápido (< 100ms)', async () => {
       const start = Date.now();
       const { req, res } = createMockReqRes('/_health');
-      await healthHandler!(req, res);
+      await handler!(req, res);
       expect(Date.now() - start).toBeLessThan(100);
     });
   });
 
   describe('GET /_diag → diagnostic.js (standalone Lambda)', () => {
+    let handler: ((req: any, res: any) => Promise<void>) | undefined;
+
+    beforeAll(() => { handler = loadHandler('../api/diagnostic'); });
     beforeEach(() => {
-      if (!diagHandler) {
-        pending('diagnostic.js no disponible. Ejecutar `npm run build` primero.');
-      }
+      if (!handler) pending('diagnostic.js no disponible. Ejecutar `npm run build` primero.');
     });
 
     it('debe responder 200 con {"status":"ok"}', async () => {
       const { req, res } = createMockReqRes('/_diag');
-      await diagHandler!(req, res);
+      await handler!(req, res);
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ status: 'ok' });
     });
 
     it('debe incluir method, path, headers y env en la respuesta', async () => {
       const { req, res } = createMockReqRes('/_diag', 'POST');
-      await diagHandler!(req, res);
+      await handler!(req, res);
       expect(res.body).toHaveProperty('method', 'POST');
       expect(res.body).toHaveProperty('path', '/_diag');
       expect(res.body).toHaveProperty('headers');
@@ -211,12 +180,10 @@ describe('Vercel Lambda Endpoints (e2e)', () => {
 
     it('NO debe filtrar secretos en env', async () => {
       const { req, res } = createMockReqRes('/_diag');
-      await diagHandler!(req, res);
+      await handler!(req, res);
       const envList = (res.body as Record<string, string[]>).env;
-      // El handler filtra por defecto: TOKEN, SECRET, KEY, PASSWORD, DATABASE_URL, REDIS_URL
       expect(envList).toBeDefined();
       expect(Array.isArray(envList)).toBe(true);
-      // Verificar que no haya valores sensibles
       for (const key of envList) {
         expect(key).not.toMatch(/TOKEN|SECRET|KEY|PASSWORD/i);
         expect(key).not.toBe('DATABASE_URL');
@@ -228,48 +195,69 @@ describe('Vercel Lambda Endpoints (e2e)', () => {
   // ═══════════════════════════════════════════════════════════════════════
   //  NestJS Routes via handler.js
   //  ────────────────────────────────────────────────
-  //  handler.js es el entry point para /api/v1/*. Inicializa NestJS
-  //  vía createApp(adapter) y delega requests. Estos tests verifican que
-  //  NestJS responde correctamente — es la misma ruta que handler.js usa.
+  //  Requieren DB + Redis. Se saltan si no están disponibles.
   // ═══════════════════════════════════════════════════════════════════════
 
-  describe('GET /api/v1/health → handler.js → NestJS', () => {
-    it('debe responder 200 con {"status":"ok"}', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/health')
-        .expect(200);
+  describe('NestJS API Routes', () => {
+    let app: INestApplication;
 
-      expect(response.body).toMatchObject({ status: 'ok', service: 'api' });
+    beforeAll(async () => {
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [AppModule],
+      })
+        .overrideProvider(ThrottlerStorage)
+        .useValue({ increment: () => Promise.resolve({ totalHits: 0, timeToExpire: 0 }) })
+        .compile();
+
+      app = moduleFixture.createNestApplication();
+      app.setGlobalPrefix('api/v1');
+      app.useGlobalPipes(
+        new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
+      );
+      await app.init();
+      await ensureDbAndRedis(app);
     });
 
-    it('debe incluir header x-request-id (middleware global)', async () => {
-      const response = await request(app.getHttpServer()).get('/api/v1/health');
-      expect(response.headers['x-request-id']).toBeDefined();
-      expect(typeof response.headers['x-request-id']).toBe('string');
-    });
-  });
-
-  describe('POST /api/v1/auth/login → handler.js → NestJS', () => {
-    it('debe loguear admin y retornar tokens JWT', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email: 'admin@tienda.local', password: 'Admin123!' })
-        .expect(200);
-
-      expect(response.body.tokens).toBeDefined();
-      expect(response.body.tokens.accessToken).toBeDefined();
-      expect(response.body.tokens.refreshToken).toBeDefined();
-
-      // Verificar que el access token es un JWT válido (3 partes)
-      const parts = (response.body.tokens.accessToken as string).split('.');
-      expect(parts).toHaveLength(3);
+    afterAll(async () => {
+      await app?.close();
     });
 
-    it('debe rechazar credenciales inválidas con 401', async () => {
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({ email: 'admin@tienda.local', password: 'WrongPass1!' })
-        .expect(401);
+    describe('GET /api/v1/health', () => {
+      it('debe responder 200 con {"status":"ok"}', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/health')
+          .expect(200);
+
+        expect(response.body).toMatchObject({ status: 'ok', service: 'api' });
+      });
+
+      it('debe incluir header x-request-id (middleware global)', async () => {
+        const response = await request(app.getHttpServer()).get('/api/v1/health');
+        expect(response.headers['x-request-id']).toBeDefined();
+        expect(typeof response.headers['x-request-id']).toBe('string');
+      });
+    });
+
+    describe('POST /api/v1/auth/login', () => {
+      it('debe loguear admin y retornar tokens JWT', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/auth/login')
+          .send({ email: 'admin@tienda.local', password: 'Admin123!' })
+          .expect(200);
+
+        expect(response.body.tokens).toBeDefined();
+        expect(response.body.tokens.accessToken).toBeDefined();
+        expect(response.body.tokens.refreshToken).toBeDefined();
+        const parts = (response.body.tokens.accessToken as string).split('.');
+        expect(parts).toHaveLength(3);
+      });
+
+      it('debe rechazar credenciales inválidas con 401', async () => {
+        await request(app.getHttpServer())
+          .post('/api/v1/auth/login')
+          .send({ email: 'admin@tienda.local', password: 'WrongPass1!' })
+          .expect(401);
+      });
     });
   });
 });
