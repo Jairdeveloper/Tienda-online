@@ -117,6 +117,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentación formal de la incidencia de Lambda crash: `docs/057_BUGFIX_BACKEND_LAMBDA_CRASH_1_0_DRAFT.md` — cubre las 4 causas raíz (DebugModule huérfana, BotService DI, nft tracing, outputDirectory), fixes aplicados y lecciones aprendidas
   - Added Runtime Error Diagnostic section to `.opencode/agents/dev-ops.md` for diagnosing 404/500 errors in production
 - Documentación formal del bug de Prisma en Vercel Lambda y fixes aplicados: `docs/059_BUGFIX_BACKEND_PRISMA_VERCEL_1_0_DRAFT.md` — cubre las 3 capas de fix (configOverride, fix-prisma-config.js, PRISMA_SKIP_POSTINSTALL_GENERATE), causas raíz y lecciones aprendidas
+- **API Analysis Report**: `docs/frontend/Analize.md` — comprehensive API module inventory documenting all endpoints, tech stack, 22 Prisma models, docs structure, and frontend consumption requirements for the SPA
+- **Vercel Monorepo Deploy Plan**: `docs/monorepo/050_EXEC_PLAN_MONOREPO_VERCEL_DEPLoY_1_0_DRAFT.md` — detailed 312-line execution plan covering Vercel reconfiguration, env vars, Neon/Upstash setup, CI/CD updates, health checks, and risk assessment for Phase 6 deployment
+- **Glosario agent update**: `.opencode/agents/glosario.md` — appended doc reference list for agent knowledge base
 
 ---
 

@@ -206,3 +206,4 @@ Para verificación de documentación:
 
 ---
 _Agente generado el 2026-06-04 por instruccion directa del usuario_
+Lee los siguientes archivosdocs/ai/028_PRM_BUILD_AGENTS_1_0_DRAFT.md, docs/ai/028_PRM_BUILD_AGENTS_1_0_DRAFT.md
