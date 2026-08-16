@@ -11,3 +11,4 @@ coverage/
 .workflow
 dist-frontend/
 *.tsbuildinfo
+docs-nonversioned/
